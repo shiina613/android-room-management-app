@@ -1,0 +1,777 @@
+{
+  "info": {
+    "name": "Room Management API",
+    "description": "Full flow: Register → Login → Room → Tenant → Contract → Meter Reading → Invoice → Payment → Reports",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8080" },
+    { "key": "landlord_token", "value": "" },
+    { "key": "tenant_token", "value": "" },
+    { "key": "landlord_id", "value": "" },
+    { "key": "tenant_id", "value": "" },
+    { "key": "room_id", "value": "" },
+    { "key": "contract_id", "value": "" },
+    { "key": "meter_reading_id", "value": "" },
+    { "key": "invoice_id", "value": "" },
+    { "key": "payment_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "1.1 Register Landlord",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/auth/register", "host": ["{{base_url}}"], "path": ["api","auth","register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"landlord01\",\n  \"password\": \"Password@123\",\n  \"email\": \"landlord01@example.com\",\n  \"fullName\": \"Nguyen Van A\",\n  \"phone\": \"0901234567\",\n  \"role\": \"ROLE_LANDLORD\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.success) {",
+                "  pm.collectionVariables.set('landlord_token', res.data.accessToken);",
+                "  pm.collectionVariables.set('landlord_id', res.data.userId);",
+                "  pm.test('Register landlord OK', () => pm.response.to.have.status(201));",
+                "}"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "1.2 Login Landlord",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api","auth","login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"landlord01\",\n  \"password\": \"Password@123\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.success) {",
+                "  pm.collectionVariables.set('landlord_token', res.data.accessToken);",
+                "  pm.collectionVariables.set('landlord_id', res.data.userId);",
+                "  pm.test('Login landlord OK', () => pm.response.to.have.status(200));",
+                "}"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "1.3 Get Me (Landlord)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{landlord_token}}" }],
+            "url": { "raw": "{{base_url}}/api/auth/me", "host": ["{{base_url}}"], "path": ["api","auth","me"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": ["pm.test('Get me OK', () => pm.response.to.have.status(200));"]
+            }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "2. Room",
+      "item": [
+        {
+          "name": "2.1 Create Room",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{landlord_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/rooms", "host": ["{{base_url}}"], "path": ["api","rooms"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Phòng 101 - Quận 1\",\n  \"address\": \"101 Nguyen Trai, Q1, TP.HCM\",\n  \"price\": 3500000,\n  \"elecPrice\": 3500,\n  \"waterPrice\": 15000,\n  \"servicePrice\": 200000,\n  \"category\": \"STUDIO\",\n  \"status\": \"AVAILABLE\",\n  \"description\": \"Phòng studio đầy đủ nội thất\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.success) {",
+                "  pm.collectionVariables.set('room_id', res.data.id);",
+                "  pm.test('Create room OK', () => pm.response.to.have.status(201));",
+                "}"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "2.2 List Rooms",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{landlord_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/rooms?status=AVAILABLE&page=0&size=10",
+              "host": ["{{base_url}}"], "path": ["api","rooms"],
+              "query": [
+                { "key": "status", "value": "AVAILABLE" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('List rooms OK', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "2.3 Get Room By ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{landlord_token}}" }],
+            "url": { "raw": "{{base_url}}/api/rooms/{{room_id}}", "host": ["{{base_url}}"], "path": ["api","rooms","{{room_id}}"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Get room OK', () => pm.response.to.have.status(200));"] }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "3. Tenant",
+      "item": [
+        {
+          "name": "3.1 Create Tenant",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{landlord_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/tenants", "host": ["{{base_url}}"], "path": ["api","tenants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"tenant01\",\n  \"password\": \"Password@123\",\n  \"fullName\": \"Tran Thi B\",\n  \"email\": \"tenant01@example.com\",\n  \"phone\": \"0912345678\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.success) {",
+                "  pm.collectionVariables.set('tenant_id', res.data.id);",
+                "  pm.test('Create tenant OK', () => pm.response.to.have.status(201));",
+                "}"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "3.2 Login Tenant",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api","auth","login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"tenant01\",\n  \"password\": \"Password@123\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.success) {",
+                "  pm.collectionVariables.set('tenant_token', res.data.accessToken);",
+                "  pm.test('Login tenant OK', () => pm.response.to.have.status(200));",
+                "}"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "3.3 List Tenants",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{landlord_token}}" }],
+            "url": { "raw": "{{base_url}}/api/tenants?page=0&size=10", "host": ["{{base_url}}"], "path": ["api","tenants"],
+              "query": [{ "key": "page", "value": "0" }, { "key": "size", "value": "10" }]
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('List tenants OK', () => pm.response.to.have.status(200));"] }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "4. Contract",
+      "item": [
+        {
+          "name": "4.1 Create Contract",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{landlord_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/contracts", "host": ["{{base_url}}"], "path": ["api","contracts"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomId\": {{room_id}},\n  \"tenantId\": {{tenant_id}},\n  \"startDate\": \"2026-03-01\",\n  \"endDate\": \"2027-02-28\",\n  \"deposit\": 7000000,\n  \"monthlyRent\": 3500000\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.success) {",
+                "  pm.collectionVariables.set('contract_id', res.data.id);",
+                "  pm.test('Create contract OK', () => pm.response.to.have.status(201));",
+                "}"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "4.2 List Contracts",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{landlord_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/contracts?status=ACTIVE&page=0&size=10",
+              "host": ["{{base_url}}"], "path": ["api","contracts"],
+              "query": [{ "key": "status", "value": "ACTIVE" }, { "key": "page", "value": "0" }, { "key": "size", "value": "10" }]
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('List contracts OK', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "4.3 Get Contract By ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{landlord_token}}" }],
+            "url": { "raw": "{{base_url}}/api/contracts/{{contract_id}}", "host": ["{{base_url}}"], "path": ["api","contracts","{{contract_id}}"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Get contract OK', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "4.4 Extend Contract",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{landlord_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/contracts/{{contract_id}}/extend", "host": ["{{base_url}}"], "path": ["api","contracts","{{contract_id}}","extend"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newEndDate\": \"2027-08-31\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Extend contract OK', () => pm.response.to.have.status(200));"] }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "5. Meter Reading",
+      "item": [
+        {
+          "name": "5.1 Record Meter Reading",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{landlord_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/meter-readings", "host": ["{{base_url}}"], "path": ["api","meter-readings"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomId\": {{room_id}},\n  \"billingMonth\": \"2026-03\",\n  \"electricPrevious\": 100,\n  \"electricCurrent\": 145,\n  \"waterPrevious\": 20,\n  \"waterCurrent\": 27\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.success) {",
+                "  pm.collectionVariables.set('meter_reading_id', res.data.id);",
+                "  pm.test('Record meter reading OK', () => pm.response.to.have.status(201));",
+                "  console.log('electricUsage:', res.data.electricUsage, '| waterUsage:', res.data.waterUsage);",
+                "  console.log('electricAmount:', res.data.electricAmount, '| waterAmount:', res.data.waterAmount);",
+                "}"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "5.2 Get Meter Reading By ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{landlord_token}}" }],
+            "url": { "raw": "{{base_url}}/api/meter-readings/{{meter_reading_id}}", "host": ["{{base_url}}"], "path": ["api","meter-readings","{{meter_reading_id}}"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Get meter reading OK', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "5.3 Get History By Room",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{landlord_token}}" }],
+            "url": { "raw": "{{base_url}}/api/meter-readings/rooms/{{room_id}}", "host": ["{{base_url}}"], "path": ["api","meter-readings","rooms","{{room_id}}"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Get history OK', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "5.4 Get By Room And Month",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{landlord_token}}" }],
+            "url": { "raw": "{{base_url}}/api/meter-readings/rooms/{{room_id}}/month/2026-03", "host": ["{{base_url}}"], "path": ["api","meter-readings","rooms","{{room_id}}","month","2026-03"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Get by month OK', () => pm.response.to.have.status(200));"] }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "6. Invoice",
+      "item": [
+        {
+          "name": "6.1 Create Invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{landlord_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/invoices", "host": ["{{base_url}}"], "path": ["api","invoices"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contractId\": {{contract_id}},\n  \"meterReadingId\": {{meter_reading_id}},\n  \"billingMonth\": \"2026-03\",\n  \"dueDate\": \"2026-04-05\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.success) {",
+                "  pm.collectionVariables.set('invoice_id', res.data.id);",
+                "  pm.test('Create invoice OK', () => pm.response.to.have.status(201));",
+                "  console.log('Total amount:', res.data.totalAmount);",
+                "  console.log('Breakdown:', JSON.stringify(res.data.breakdown));",
+                "}"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "6.2 Get Invoice By ID (Landlord)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{landlord_token}}" }],
+            "url": { "raw": "{{base_url}}/api/invoices/{{invoice_id}}", "host": ["{{base_url}}"], "path": ["api","invoices","{{invoice_id}}"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Get invoice OK', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "6.3 Get Invoice By ID (Tenant)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tenant_token}}" }],
+            "url": { "raw": "{{base_url}}/api/invoices/{{invoice_id}}", "host": ["{{base_url}}"], "path": ["api","invoices","{{invoice_id}}"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Tenant get invoice OK', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "6.4 My Invoices (Landlord)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{landlord_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/invoices/my?status=UNPAID",
+              "host": ["{{base_url}}"], "path": ["api","invoices","my"],
+              "query": [{ "key": "status", "value": "UNPAID" }]
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('My invoices OK', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "6.5 My Invoices (Tenant)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tenant_token}}" }],
+            "url": { "raw": "{{base_url}}/api/invoices/tenant/me", "host": ["{{base_url}}"], "path": ["api","invoices","tenant","me"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Tenant invoices OK', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "6.6 Invoices By Contract",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{landlord_token}}" }],
+            "url": { "raw": "{{base_url}}/api/invoices/contracts/{{contract_id}}", "host": ["{{base_url}}"], "path": ["api","invoices","contracts","{{contract_id}}"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Invoices by contract OK', () => pm.response.to.have.status(200));"] }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "7. Payment",
+      "item": [
+        {
+          "name": "7.1 Create Payment (Full)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{landlord_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/payments", "host": ["{{base_url}}"], "path": ["api","payments"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invoiceId\": {{invoice_id}},\n  \"amount\": 4052500,\n  \"paymentMethod\": \"CASH\",\n  \"note\": \"Thanh toan thang 3/2026\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.success) {",
+                "  pm.collectionVariables.set('payment_id', res.data.id);",
+                "  pm.test('Create payment OK', () => pm.response.to.have.status(201));",
+                "  pm.test('Invoice auto-PAID when full', () => {",
+                "    pm.expect(res.data.remaining).to.eql(0);",
+                "  });",
+                "  console.log('Invoice status after payment:', res.data.invoiceStatus);",
+                "}"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "7.2 Create Payment (Partial)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{landlord_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/payments", "host": ["{{base_url}}"], "path": ["api","payments"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invoiceId\": {{invoice_id}},\n  \"amount\": 2000000,\n  \"paymentMethod\": \"BANK_TRANSFER\",\n  \"note\": \"Dat coc truoc\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const res = pm.response.json();",
+                "pm.test('Partial payment OK', () => pm.response.to.have.status(201));",
+                "if (res.success) console.log('Remaining:', res.data.remaining);"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "7.3 Get Payment By ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{landlord_token}}" }],
+            "url": { "raw": "{{base_url}}/api/payments/{{payment_id}}", "host": ["{{base_url}}"], "path": ["api","payments","{{payment_id}}"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Get payment OK', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "7.4 Payments By Invoice",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{landlord_token}}" }],
+            "url": { "raw": "{{base_url}}/api/payments/invoices/{{invoice_id}}", "host": ["{{base_url}}"], "path": ["api","payments","invoices","{{invoice_id}}"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Payments by invoice OK', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "7.5 My Payments (Landlord)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{landlord_token}}" }],
+            "url": { "raw": "{{base_url}}/api/payments/my", "host": ["{{base_url}}"], "path": ["api","payments","my"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('My payments OK', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "7.6 My Payments (Tenant)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tenant_token}}" }],
+            "url": { "raw": "{{base_url}}/api/payments/tenant/me", "host": ["{{base_url}}"], "path": ["api","payments","tenant","me"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Tenant payments OK', () => pm.response.to.have.status(200));"] }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "8. Reports",
+      "item": [
+        {
+          "name": "8.1 Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{landlord_token}}" }],
+            "url": { "raw": "{{base_url}}/api/reports/dashboard", "host": ["{{base_url}}"], "path": ["api","reports","dashboard"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Dashboard OK', () => pm.response.to.have.status(200));",
+                "const res = pm.response.json();",
+                "if (res.success) {",
+                "  console.log('totalRooms:', res.data.totalRooms);",
+                "  console.log('occupiedRooms:', res.data.occupiedRooms);",
+                "  console.log('revenueThisMonth:', res.data.revenueThisMonth);",
+                "  console.log('unpaidInvoices:', res.data.unpaidInvoices);",
+                "}"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "8.2 Monthly Revenue",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{landlord_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/reports/revenue/monthly?year=2026&month=3",
+              "host": ["{{base_url}}"], "path": ["api","reports","revenue","monthly"],
+              "query": [{ "key": "year", "value": "2026" }, { "key": "month", "value": "3" }]
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Monthly revenue OK', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "8.3 Yearly Revenue",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{landlord_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/reports/revenue/yearly?year=2026",
+              "host": ["{{base_url}}"], "path": ["api","reports","revenue","yearly"],
+              "query": [{ "key": "year", "value": "2026" }]
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Yearly revenue OK', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "8.4 Debt Report",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{landlord_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/reports/debt?billingMonth=2026-03",
+              "host": ["{{base_url}}"], "path": ["api","reports","debt"],
+              "query": [{ "key": "billingMonth", "value": "2026-03" }]
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Debt report OK', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "8.5 Room Status Report",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{landlord_token}}" }],
+            "url": { "raw": "{{base_url}}/api/reports/rooms", "host": ["{{base_url}}"], "path": ["api","reports","rooms"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Room status report OK', () => pm.response.to.have.status(200));"] }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "9. Notifications",
+      "item": [
+        {
+          "name": "9.1 Get My Notifications",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{landlord_token}}" }],
+            "url": { "raw": "{{base_url}}/api/notifications", "host": ["{{base_url}}"], "path": ["api","notifications"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Get notifications OK', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "9.2 Count Unread",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{landlord_token}}" }],
+            "url": { "raw": "{{base_url}}/api/notifications/unread-count", "host": ["{{base_url}}"], "path": ["api","notifications","unread-count"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Count unread OK', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "9.3 Mark All Read",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{landlord_token}}" }],
+            "url": { "raw": "{{base_url}}/api/notifications/read-all", "host": ["{{base_url}}"], "path": ["api","notifications","read-all"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Mark all read OK', () => pm.response.to.have.status(200));"] }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "10. Edge Cases",
+      "item": [
+        {
+          "name": "10.1 Login Wrong Password (expect 401)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api","auth","login"] },
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"landlord01\",\n  \"password\": \"wrongpassword\"\n}" }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Wrong password returns 401', () => pm.response.to.have.status(401));"] }
+          }]
+        },
+        {
+          "name": "10.2 Duplicate Invoice Same Month (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{landlord_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/invoices", "host": ["{{base_url}}"], "path": ["api","invoices"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contractId\": {{contract_id}},\n  \"meterReadingId\": {{meter_reading_id}},\n  \"billingMonth\": \"2026-03\",\n  \"dueDate\": \"2026-04-05\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Duplicate invoice returns 400', () => pm.response.to.have.status(400));"] }
+          }]
+        },
+        {
+          "name": "10.3 Tenant Access Landlord Endpoint (expect 403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tenant_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/rooms", "host": ["{{base_url}}"], "path": ["api","rooms"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Hack room\",\n  \"address\": \"test\",\n  \"price\": 1000,\n  \"elecPrice\": 1000,\n  \"waterPrice\": 1000,\n  \"servicePrice\": 0,\n  \"category\": \"STUDIO\",\n  \"status\": \"AVAILABLE\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Tenant cannot create room (403)', () => pm.response.to.have.status(403));"] }
+          }]
+        },
+        {
+          "name": "10.4 No Token (expect 401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/invoices/my", "host": ["{{base_url}}"], "path": ["api","invoices","my"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('No token returns 401', () => pm.response.to.have.status(401));"] }
+          }]
+        }
+      ]
+    }
+  ]
+}
