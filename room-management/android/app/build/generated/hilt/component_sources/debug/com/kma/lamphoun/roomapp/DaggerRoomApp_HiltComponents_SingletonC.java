@@ -14,8 +14,26 @@ import com.kma.lamphoun.roomapp.di.NetworkModule_ProvideOkHttpClientFactory;
 import com.kma.lamphoun.roomapp.di.NetworkModule_ProvideRetrofitFactory;
 import com.kma.lamphoun.roomapp.ui.auth.AuthViewModel;
 import com.kma.lamphoun.roomapp.ui.auth.AuthViewModel_HiltModules;
+import com.kma.lamphoun.roomapp.ui.landlord.ContractViewModel;
+import com.kma.lamphoun.roomapp.ui.landlord.ContractViewModel_HiltModules;
 import com.kma.lamphoun.roomapp.ui.landlord.DashboardViewModel;
 import com.kma.lamphoun.roomapp.ui.landlord.DashboardViewModel_HiltModules;
+import com.kma.lamphoun.roomapp.ui.landlord.InvoiceViewModel;
+import com.kma.lamphoun.roomapp.ui.landlord.InvoiceViewModel_HiltModules;
+import com.kma.lamphoun.roomapp.ui.landlord.MeterReadingViewModel;
+import com.kma.lamphoun.roomapp.ui.landlord.MeterReadingViewModel_HiltModules;
+import com.kma.lamphoun.roomapp.ui.landlord.PaymentViewModel;
+import com.kma.lamphoun.roomapp.ui.landlord.PaymentViewModel_HiltModules;
+import com.kma.lamphoun.roomapp.ui.landlord.ReportViewModel;
+import com.kma.lamphoun.roomapp.ui.landlord.ReportViewModel_HiltModules;
+import com.kma.lamphoun.roomapp.ui.landlord.RoomViewModel;
+import com.kma.lamphoun.roomapp.ui.landlord.RoomViewModel_HiltModules;
+import com.kma.lamphoun.roomapp.ui.shared.NotificationViewModel;
+import com.kma.lamphoun.roomapp.ui.shared.NotificationViewModel_HiltModules;
+import com.kma.lamphoun.roomapp.ui.shared.ProfileViewModel;
+import com.kma.lamphoun.roomapp.ui.shared.ProfileViewModel_HiltModules;
+import com.kma.lamphoun.roomapp.ui.tenant.TenantViewModel;
+import com.kma.lamphoun.roomapp.ui.tenant.TenantViewModel_HiltModules;
 import dagger.hilt.android.ActivityRetainedLifecycle;
 import dagger.hilt.android.ViewModelLifecycle;
 import dagger.hilt.android.internal.builders.ActivityComponentBuilder;
@@ -380,7 +398,7 @@ public final class DaggerRoomApp_HiltComponents_SingletonC {
 
     @Override
     public Map<Class<?>, Boolean> getViewModelKeys() {
-      return LazyClassKeyMap.<Boolean>of(MapBuilder.<String, Boolean>newMapBuilder(2).put(LazyClassKeyProvider.com_kma_lamphoun_roomapp_ui_auth_AuthViewModel, AuthViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_kma_lamphoun_roomapp_ui_landlord_DashboardViewModel, DashboardViewModel_HiltModules.KeyModule.provide()).build());
+      return LazyClassKeyMap.<Boolean>of(MapBuilder.<String, Boolean>newMapBuilder(11).put(LazyClassKeyProvider.com_kma_lamphoun_roomapp_ui_auth_AuthViewModel, AuthViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_kma_lamphoun_roomapp_ui_landlord_ContractViewModel, ContractViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_kma_lamphoun_roomapp_ui_landlord_DashboardViewModel, DashboardViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_kma_lamphoun_roomapp_ui_landlord_InvoiceViewModel, InvoiceViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_kma_lamphoun_roomapp_ui_landlord_MeterReadingViewModel, MeterReadingViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_kma_lamphoun_roomapp_ui_shared_NotificationViewModel, NotificationViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_kma_lamphoun_roomapp_ui_landlord_PaymentViewModel, PaymentViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_kma_lamphoun_roomapp_ui_shared_ProfileViewModel, ProfileViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_kma_lamphoun_roomapp_ui_landlord_ReportViewModel, ReportViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_kma_lamphoun_roomapp_ui_landlord_RoomViewModel, RoomViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_kma_lamphoun_roomapp_ui_tenant_TenantViewModel, TenantViewModel_HiltModules.KeyModule.provide()).build());
     }
 
     @Override
@@ -400,15 +418,60 @@ public final class DaggerRoomApp_HiltComponents_SingletonC {
 
     @IdentifierNameString
     private static final class LazyClassKeyProvider {
+      static String com_kma_lamphoun_roomapp_ui_auth_AuthViewModel = "com.kma.lamphoun.roomapp.ui.auth.AuthViewModel";
+
+      static String com_kma_lamphoun_roomapp_ui_landlord_MeterReadingViewModel = "com.kma.lamphoun.roomapp.ui.landlord.MeterReadingViewModel";
+
+      static String com_kma_lamphoun_roomapp_ui_landlord_InvoiceViewModel = "com.kma.lamphoun.roomapp.ui.landlord.InvoiceViewModel";
+
+      static String com_kma_lamphoun_roomapp_ui_landlord_ReportViewModel = "com.kma.lamphoun.roomapp.ui.landlord.ReportViewModel";
+
+      static String com_kma_lamphoun_roomapp_ui_shared_NotificationViewModel = "com.kma.lamphoun.roomapp.ui.shared.NotificationViewModel";
+
+      static String com_kma_lamphoun_roomapp_ui_tenant_TenantViewModel = "com.kma.lamphoun.roomapp.ui.tenant.TenantViewModel";
+
+      static String com_kma_lamphoun_roomapp_ui_landlord_ContractViewModel = "com.kma.lamphoun.roomapp.ui.landlord.ContractViewModel";
+
       static String com_kma_lamphoun_roomapp_ui_landlord_DashboardViewModel = "com.kma.lamphoun.roomapp.ui.landlord.DashboardViewModel";
 
-      static String com_kma_lamphoun_roomapp_ui_auth_AuthViewModel = "com.kma.lamphoun.roomapp.ui.auth.AuthViewModel";
+      static String com_kma_lamphoun_roomapp_ui_shared_ProfileViewModel = "com.kma.lamphoun.roomapp.ui.shared.ProfileViewModel";
+
+      static String com_kma_lamphoun_roomapp_ui_landlord_PaymentViewModel = "com.kma.lamphoun.roomapp.ui.landlord.PaymentViewModel";
+
+      static String com_kma_lamphoun_roomapp_ui_landlord_RoomViewModel = "com.kma.lamphoun.roomapp.ui.landlord.RoomViewModel";
+
+      @KeepFieldType
+      AuthViewModel com_kma_lamphoun_roomapp_ui_auth_AuthViewModel2;
+
+      @KeepFieldType
+      MeterReadingViewModel com_kma_lamphoun_roomapp_ui_landlord_MeterReadingViewModel2;
+
+      @KeepFieldType
+      InvoiceViewModel com_kma_lamphoun_roomapp_ui_landlord_InvoiceViewModel2;
+
+      @KeepFieldType
+      ReportViewModel com_kma_lamphoun_roomapp_ui_landlord_ReportViewModel2;
+
+      @KeepFieldType
+      NotificationViewModel com_kma_lamphoun_roomapp_ui_shared_NotificationViewModel2;
+
+      @KeepFieldType
+      TenantViewModel com_kma_lamphoun_roomapp_ui_tenant_TenantViewModel2;
+
+      @KeepFieldType
+      ContractViewModel com_kma_lamphoun_roomapp_ui_landlord_ContractViewModel2;
 
       @KeepFieldType
       DashboardViewModel com_kma_lamphoun_roomapp_ui_landlord_DashboardViewModel2;
 
       @KeepFieldType
-      AuthViewModel com_kma_lamphoun_roomapp_ui_auth_AuthViewModel2;
+      ProfileViewModel com_kma_lamphoun_roomapp_ui_shared_ProfileViewModel2;
+
+      @KeepFieldType
+      PaymentViewModel com_kma_lamphoun_roomapp_ui_landlord_PaymentViewModel2;
+
+      @KeepFieldType
+      RoomViewModel com_kma_lamphoun_roomapp_ui_landlord_RoomViewModel2;
     }
   }
 
@@ -421,7 +484,25 @@ public final class DaggerRoomApp_HiltComponents_SingletonC {
 
     private Provider<AuthViewModel> authViewModelProvider;
 
+    private Provider<ContractViewModel> contractViewModelProvider;
+
     private Provider<DashboardViewModel> dashboardViewModelProvider;
+
+    private Provider<InvoiceViewModel> invoiceViewModelProvider;
+
+    private Provider<MeterReadingViewModel> meterReadingViewModelProvider;
+
+    private Provider<NotificationViewModel> notificationViewModelProvider;
+
+    private Provider<PaymentViewModel> paymentViewModelProvider;
+
+    private Provider<ProfileViewModel> profileViewModelProvider;
+
+    private Provider<ReportViewModel> reportViewModelProvider;
+
+    private Provider<RoomViewModel> roomViewModelProvider;
+
+    private Provider<TenantViewModel> tenantViewModelProvider;
 
     private ViewModelCImpl(SingletonCImpl singletonCImpl,
         ActivityRetainedCImpl activityRetainedCImpl, SavedStateHandle savedStateHandleParam,
@@ -437,12 +518,21 @@ public final class DaggerRoomApp_HiltComponents_SingletonC {
     private void initialize(final SavedStateHandle savedStateHandleParam,
         final ViewModelLifecycle viewModelLifecycleParam) {
       this.authViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 0);
-      this.dashboardViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 1);
+      this.contractViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 1);
+      this.dashboardViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 2);
+      this.invoiceViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 3);
+      this.meterReadingViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 4);
+      this.notificationViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 5);
+      this.paymentViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 6);
+      this.profileViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 7);
+      this.reportViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 8);
+      this.roomViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 9);
+      this.tenantViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 10);
     }
 
     @Override
     public Map<Class<?>, javax.inject.Provider<ViewModel>> getHiltViewModelMap() {
-      return LazyClassKeyMap.<javax.inject.Provider<ViewModel>>of(MapBuilder.<String, javax.inject.Provider<ViewModel>>newMapBuilder(2).put(LazyClassKeyProvider.com_kma_lamphoun_roomapp_ui_auth_AuthViewModel, ((Provider) authViewModelProvider)).put(LazyClassKeyProvider.com_kma_lamphoun_roomapp_ui_landlord_DashboardViewModel, ((Provider) dashboardViewModelProvider)).build());
+      return LazyClassKeyMap.<javax.inject.Provider<ViewModel>>of(MapBuilder.<String, javax.inject.Provider<ViewModel>>newMapBuilder(11).put(LazyClassKeyProvider.com_kma_lamphoun_roomapp_ui_auth_AuthViewModel, ((Provider) authViewModelProvider)).put(LazyClassKeyProvider.com_kma_lamphoun_roomapp_ui_landlord_ContractViewModel, ((Provider) contractViewModelProvider)).put(LazyClassKeyProvider.com_kma_lamphoun_roomapp_ui_landlord_DashboardViewModel, ((Provider) dashboardViewModelProvider)).put(LazyClassKeyProvider.com_kma_lamphoun_roomapp_ui_landlord_InvoiceViewModel, ((Provider) invoiceViewModelProvider)).put(LazyClassKeyProvider.com_kma_lamphoun_roomapp_ui_landlord_MeterReadingViewModel, ((Provider) meterReadingViewModelProvider)).put(LazyClassKeyProvider.com_kma_lamphoun_roomapp_ui_shared_NotificationViewModel, ((Provider) notificationViewModelProvider)).put(LazyClassKeyProvider.com_kma_lamphoun_roomapp_ui_landlord_PaymentViewModel, ((Provider) paymentViewModelProvider)).put(LazyClassKeyProvider.com_kma_lamphoun_roomapp_ui_shared_ProfileViewModel, ((Provider) profileViewModelProvider)).put(LazyClassKeyProvider.com_kma_lamphoun_roomapp_ui_landlord_ReportViewModel, ((Provider) reportViewModelProvider)).put(LazyClassKeyProvider.com_kma_lamphoun_roomapp_ui_landlord_RoomViewModel, ((Provider) roomViewModelProvider)).put(LazyClassKeyProvider.com_kma_lamphoun_roomapp_ui_tenant_TenantViewModel, ((Provider) tenantViewModelProvider)).build());
     }
 
     @Override
@@ -454,13 +544,58 @@ public final class DaggerRoomApp_HiltComponents_SingletonC {
     private static final class LazyClassKeyProvider {
       static String com_kma_lamphoun_roomapp_ui_auth_AuthViewModel = "com.kma.lamphoun.roomapp.ui.auth.AuthViewModel";
 
+      static String com_kma_lamphoun_roomapp_ui_landlord_ContractViewModel = "com.kma.lamphoun.roomapp.ui.landlord.ContractViewModel";
+
+      static String com_kma_lamphoun_roomapp_ui_shared_ProfileViewModel = "com.kma.lamphoun.roomapp.ui.shared.ProfileViewModel";
+
+      static String com_kma_lamphoun_roomapp_ui_landlord_PaymentViewModel = "com.kma.lamphoun.roomapp.ui.landlord.PaymentViewModel";
+
+      static String com_kma_lamphoun_roomapp_ui_landlord_MeterReadingViewModel = "com.kma.lamphoun.roomapp.ui.landlord.MeterReadingViewModel";
+
+      static String com_kma_lamphoun_roomapp_ui_tenant_TenantViewModel = "com.kma.lamphoun.roomapp.ui.tenant.TenantViewModel";
+
+      static String com_kma_lamphoun_roomapp_ui_shared_NotificationViewModel = "com.kma.lamphoun.roomapp.ui.shared.NotificationViewModel";
+
+      static String com_kma_lamphoun_roomapp_ui_landlord_RoomViewModel = "com.kma.lamphoun.roomapp.ui.landlord.RoomViewModel";
+
       static String com_kma_lamphoun_roomapp_ui_landlord_DashboardViewModel = "com.kma.lamphoun.roomapp.ui.landlord.DashboardViewModel";
+
+      static String com_kma_lamphoun_roomapp_ui_landlord_ReportViewModel = "com.kma.lamphoun.roomapp.ui.landlord.ReportViewModel";
+
+      static String com_kma_lamphoun_roomapp_ui_landlord_InvoiceViewModel = "com.kma.lamphoun.roomapp.ui.landlord.InvoiceViewModel";
 
       @KeepFieldType
       AuthViewModel com_kma_lamphoun_roomapp_ui_auth_AuthViewModel2;
 
       @KeepFieldType
+      ContractViewModel com_kma_lamphoun_roomapp_ui_landlord_ContractViewModel2;
+
+      @KeepFieldType
+      ProfileViewModel com_kma_lamphoun_roomapp_ui_shared_ProfileViewModel2;
+
+      @KeepFieldType
+      PaymentViewModel com_kma_lamphoun_roomapp_ui_landlord_PaymentViewModel2;
+
+      @KeepFieldType
+      MeterReadingViewModel com_kma_lamphoun_roomapp_ui_landlord_MeterReadingViewModel2;
+
+      @KeepFieldType
+      TenantViewModel com_kma_lamphoun_roomapp_ui_tenant_TenantViewModel2;
+
+      @KeepFieldType
+      NotificationViewModel com_kma_lamphoun_roomapp_ui_shared_NotificationViewModel2;
+
+      @KeepFieldType
+      RoomViewModel com_kma_lamphoun_roomapp_ui_landlord_RoomViewModel2;
+
+      @KeepFieldType
       DashboardViewModel com_kma_lamphoun_roomapp_ui_landlord_DashboardViewModel2;
+
+      @KeepFieldType
+      ReportViewModel com_kma_lamphoun_roomapp_ui_landlord_ReportViewModel2;
+
+      @KeepFieldType
+      InvoiceViewModel com_kma_lamphoun_roomapp_ui_landlord_InvoiceViewModel2;
     }
 
     private static final class SwitchingProvider<T> implements Provider<T> {
@@ -487,8 +622,35 @@ public final class DaggerRoomApp_HiltComponents_SingletonC {
           case 0: // com.kma.lamphoun.roomapp.ui.auth.AuthViewModel 
           return (T) new AuthViewModel(singletonCImpl.provideApiServiceProvider.get(), singletonCImpl.tokenDataStoreProvider.get());
 
-          case 1: // com.kma.lamphoun.roomapp.ui.landlord.DashboardViewModel 
+          case 1: // com.kma.lamphoun.roomapp.ui.landlord.ContractViewModel 
+          return (T) new ContractViewModel(singletonCImpl.provideApiServiceProvider.get());
+
+          case 2: // com.kma.lamphoun.roomapp.ui.landlord.DashboardViewModel 
           return (T) new DashboardViewModel(singletonCImpl.provideApiServiceProvider.get(), singletonCImpl.tokenDataStoreProvider.get());
+
+          case 3: // com.kma.lamphoun.roomapp.ui.landlord.InvoiceViewModel 
+          return (T) new InvoiceViewModel(singletonCImpl.provideApiServiceProvider.get());
+
+          case 4: // com.kma.lamphoun.roomapp.ui.landlord.MeterReadingViewModel 
+          return (T) new MeterReadingViewModel(singletonCImpl.provideApiServiceProvider.get());
+
+          case 5: // com.kma.lamphoun.roomapp.ui.shared.NotificationViewModel 
+          return (T) new NotificationViewModel(singletonCImpl.provideApiServiceProvider.get());
+
+          case 6: // com.kma.lamphoun.roomapp.ui.landlord.PaymentViewModel 
+          return (T) new PaymentViewModel(singletonCImpl.provideApiServiceProvider.get());
+
+          case 7: // com.kma.lamphoun.roomapp.ui.shared.ProfileViewModel 
+          return (T) new ProfileViewModel(singletonCImpl.provideApiServiceProvider.get());
+
+          case 8: // com.kma.lamphoun.roomapp.ui.landlord.ReportViewModel 
+          return (T) new ReportViewModel(singletonCImpl.provideApiServiceProvider.get());
+
+          case 9: // com.kma.lamphoun.roomapp.ui.landlord.RoomViewModel 
+          return (T) new RoomViewModel(singletonCImpl.provideApiServiceProvider.get());
+
+          case 10: // com.kma.lamphoun.roomapp.ui.tenant.TenantViewModel 
+          return (T) new TenantViewModel(singletonCImpl.provideApiServiceProvider.get(), singletonCImpl.tokenDataStoreProvider.get());
 
           default: throw new AssertionError(id);
         }

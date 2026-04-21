@@ -17,8 +17,17 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
 
     Page<Room> findByCategory(RoomCategory category, Pageable pageable);
 
-    @Query("""
+    @Query(value = """
         SELECT r FROM Room r
+        JOIN FETCH r.owner
+        WHERE (:status IS NULL OR r.status = :status)
+          AND (:category IS NULL OR r.category = :category)
+          AND (:keyword IS NULL
+               OR LOWER(r.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
+               OR LOWER(r.address) LIKE LOWER(CONCAT('%', :keyword, '%')))
+        """,
+        countQuery = """
+        SELECT COUNT(r) FROM Room r
         WHERE (:status IS NULL OR r.status = :status)
           AND (:category IS NULL OR r.category = :category)
           AND (:keyword IS NULL

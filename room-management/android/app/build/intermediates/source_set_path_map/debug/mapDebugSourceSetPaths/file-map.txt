@@ -56,10 +56,10 @@ com.kma.lamphoun.roomapp-runtime-release-54 C:\Users\quang\.gradle\caches\9.0.0\
 com.kma.lamphoun.roomapp-runtime-saveable-release-55 C:\Users\quang\.gradle\caches\9.0.0\transforms\ee17d3bac12c03a17aaf3ebf01835a7c\transformed\runtime-saveable-release\res
 com.kma.lamphoun.roomapp-hilt-navigation-1.2.0-56 C:\Users\quang\.gradle\caches\9.0.0\transforms\f29d428bf7b4ae7f5b699f857f7af567\transformed\hilt-navigation-1.2.0\res
 com.kma.lamphoun.roomapp-activity-ktx-1.9.2-57 C:\Users\quang\.gradle\caches\9.0.0\transforms\fb9e9c27cb29945a70472c26daaa6a6a\transformed\activity-ktx-1.9.2\res
-com.kma.lamphoun.roomapp-pngs-58 C:\Users\quang\Documents\datn\Lamphoun\room-management\android\app\build\generated\res\pngs\debug
-com.kma.lamphoun.roomapp-resValues-59 C:\Users\quang\Documents\datn\Lamphoun\room-management\android\app\build\generated\res\resValues\debug
-com.kma.lamphoun.roomapp-packageDebugResources-60 C:\Users\quang\Documents\datn\Lamphoun\room-management\android\app\build\intermediates\incremental\debug\packageDebugResources\merged.dir
-com.kma.lamphoun.roomapp-packageDebugResources-61 C:\Users\quang\Documents\datn\Lamphoun\room-management\android\app\build\intermediates\incremental\debug\packageDebugResources\stripped.dir
-com.kma.lamphoun.roomapp-debug-62 C:\Users\quang\Documents\datn\Lamphoun\room-management\android\app\build\intermediates\merged_res\debug\mergeDebugResources
-com.kma.lamphoun.roomapp-debug-63 C:\Users\quang\Documents\datn\Lamphoun\room-management\android\app\src\debug\res
-com.kma.lamphoun.roomapp-main-64 C:\Users\quang\Documents\datn\Lamphoun\room-management\android\app\src\main\res
+com.kma.lamphoun.roomapp-pngs-58 C:\Users\quang\Documents\datn\Lamphoun\android-room-management-app\room-management\android\app\build\generated\res\pngs\debug
+com.kma.lamphoun.roomapp-resValues-59 C:\Users\quang\Documents\datn\Lamphoun\android-room-management-app\room-management\android\app\build\generated\res\resValues\debug
+com.kma.lamphoun.roomapp-packageDebugResources-60 C:\Users\quang\Documents\datn\Lamphoun\android-room-management-app\room-management\android\app\build\intermediates\incremental\debug\packageDebugResources\merged.dir
+com.kma.lamphoun.roomapp-packageDebugResources-61 C:\Users\quang\Documents\datn\Lamphoun\android-room-management-app\room-management\android\app\build\intermediates\incremental\debug\packageDebugResources\stripped.dir
+com.kma.lamphoun.roomapp-debug-62 C:\Users\quang\Documents\datn\Lamphoun\android-room-management-app\room-management\android\app\build\intermediates\merged_res\debug\mergeDebugResources
+com.kma.lamphoun.roomapp-debug-63 C:\Users\quang\Documents\datn\Lamphoun\android-room-management-app\room-management\android\app\src\debug\res
+com.kma.lamphoun.roomapp-main-64 C:\Users\quang\Documents\datn\Lamphoun\android-room-management-app\room-management\android\app\src\main\res

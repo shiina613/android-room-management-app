@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.kma.lamphoun.roomapp.ui.common.*
 import com.kma.lamphoun.roomapp.ui.theme.*
 
@@ -28,16 +29,17 @@ fun TenantHomeScreen(
     onNavigateToMyContract: () -> Unit,
     onNavigateToMyInvoices: () -> Unit,
     onNavigateToNotifications: () -> Unit,
-    onNavigateToProfile: () -> Unit
+    onNavigateToProfile: () -> Unit,
+    viewModel: TenantViewModel = hiltViewModel()
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val contract = MockData.contracts.firstOrNull { it.status == "ACTIVE" }
-    val room = contract?.let { MockData.rooms.find { r -> r.id == it.roomId } }
-    val latestInvoice = MockData.invoices.firstOrNull { it.status == "UNPAID" }
-    val notifications = MockData.notifications.filter { !it.read }.take(3)
+    val activeContract by viewModel.activeContract.collectAsState()
+    val latestInvoice by viewModel.latestInvoice.collectAsState()
+    val notifications by viewModel.notifications.collectAsState()
+    val unreadCount by viewModel.unreadCount.collectAsState()
 
     Scaffold(
-        containerColor = Background,
+        containerColor = SurfaceContainerLow,
         topBar = {
             TopAppBar(
                 title = {
@@ -52,7 +54,7 @@ fun TenantHomeScreen(
                 actions = {
                     IconButton(onClick = onNavigateToNotifications) {
                         BadgedBox(badge = {
-                            if (notifications.isNotEmpty()) Badge(containerColor = MaterialTheme.colorScheme.error) { Text("${notifications.size}") }
+                            if (unreadCount > 0) Badge(containerColor = MaterialTheme.colorScheme.error) { Text("$unreadCount") }
                         }) { Icon(Icons.Outlined.Notifications, null, tint = Primary) }
                     }
                     IconButton(onClick = onNavigateToProfile) {
@@ -61,7 +63,7 @@ fun TenantHomeScreen(
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Background)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = SurfaceContainerLow)
             )
         },
         bottomBar = {
@@ -91,18 +93,14 @@ fun TenantHomeScreen(
                 .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Welcome
             Column {
-                Text("Xin chào, Trần Thị Bình 👋", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Text("Xin chào, ${viewModel.fullName.ifBlank { "Người thuê" }} 👋", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 Text("Chào mừng bạn trở về nhà", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
-            // Room info card (Figma: #005344 background)
-            if (room != null) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = Primary)
-                ) {
+            if (activeContract != null) {
+                Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Primary)) {
                     Column(modifier = Modifier.padding(20.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Text("Phòng của tôi", style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.7f))
@@ -111,44 +109,36 @@ fun TenantHomeScreen(
                             }
                         }
                         Spacer(Modifier.height(8.dp))
-                        Text(room.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White)
-                        Text(room.address, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.8f))
-                        Spacer(Modifier.height(16.dp))
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            RoomInfoChip("💰", room.price.toVnd())
-                            RoomInfoChip("⚡", "${room.elecPrice.toInt()}₫/kWh")
-                            RoomInfoChip("💧", "${room.waterPrice.toInt()}₫/m³")
-                        }
+                        Text(activeContract!!.roomTitle ?: "Phòng #${activeContract!!.roomId}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White)
+                        Spacer(Modifier.height(8.dp))
+                        Text("Tiền thuê: ${activeContract!!.monthlyRent.toVnd()}/tháng", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.9f))
                     }
                 }
             }
 
-            // Latest invoice (Figma: glassmorphism section)
             if (latestInvoice != null) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(2.dp)
-                ) {
+                Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(2.dp)) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Text("Hóa đơn mới nhất", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                            StatusChip(latestInvoice.status)
+                            StatusChip(latestInvoice!!.status)
                         }
                         Spacer(Modifier.height(8.dp))
-                        Text("Tháng ${latestInvoice.billingMonth}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(latestInvoice.totalAmount.toVnd(), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = Primary)
-                        if (latestInvoice.dueDate != null) {
+                        Text("Tháng ${latestInvoice!!.billingMonth}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(latestInvoice!!.totalAmount.toVnd(), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = Primary)
+                        if (latestInvoice!!.dueDate != null) {
                             Spacer(Modifier.height(4.dp))
-                            Text("Hạn thanh toán: ${latestInvoice.dueDate}", style = MaterialTheme.typography.bodySmall, color = StatusUnpaid)
+                            Text("Hạn thanh toán: ${latestInvoice!!.dueDate}", style = MaterialTheme.typography.bodySmall, color = StatusUnpaid)
                         }
                     }
                 }
             }
 
-            // Recent notifications
-            if (notifications.isNotEmpty()) {
+            val unreadNotifs = notifications.filter { !it.read }.take(3)
+            if (unreadNotifs.isNotEmpty()) {
                 SectionCard(title = "Thông báo gần đây") {
-                    notifications.forEach { notif ->
+                    unreadNotifs.forEach { notif ->
                         Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                             Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Primary))
                             Spacer(Modifier.width(10.dp))
@@ -161,22 +151,17 @@ fun TenantHomeScreen(
                 }
             }
 
-            // Support card (Figma: #35618F background)
-            Card(
-                modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Secondary)
-            ) {
+            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Secondary)) {
                 Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text("Cần hỗ trợ?", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = Color.White)
                         Text("Liên hệ chủ trọ ngay nếu có vấn đề", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.8f))
                     }
-                    Button(
-                        onClick = {},
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                    ) { Text("Liên hệ", color = Secondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold) }
+                    Button(onClick = {}, colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                        shape = RoundedCornerShape(8.dp), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)) {
+                        Text("Liên hệ", color = Secondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
                 }
             }
 
@@ -185,10 +170,3 @@ fun TenantHomeScreen(
     }
 }
 
-@Composable
-private fun RoomInfoChip(emoji: String, value: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(emoji, fontSize = 18.sp)
-        Text(value, fontSize = 11.sp, color = Color.White.copy(alpha = 0.9f), fontWeight = FontWeight.Medium)
-    }
-}

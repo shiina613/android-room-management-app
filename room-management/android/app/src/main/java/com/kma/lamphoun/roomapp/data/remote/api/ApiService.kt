@@ -4,6 +4,9 @@ import com.kma.lamphoun.roomapp.data.remote.dto.*
 import retrofit2.Response
 import retrofit2.http.*
 
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+
 interface ApiService {
 
     // Auth
@@ -14,7 +17,16 @@ interface ApiService {
     suspend fun register(@Body request: RegisterRequest): Response<ApiResponse<AuthResponse>>
 
     @GET("api/auth/me")
-    suspend fun getMe(): Response<ApiResponse<TenantResponse>>
+    suspend fun getMe(): Response<ApiResponse<UserResponse>>
+
+    @GET("api/users/me")
+    suspend fun getMyProfile(): Response<ApiResponse<UserResponse>>
+
+    @PUT("api/users/me")
+    suspend fun updateProfile(@Body request: UpdateProfileRequest): Response<ApiResponse<UserResponse>>
+
+    @PUT("api/users/me/password")
+    suspend fun changePassword(@Body request: ChangePasswordRequest): Response<ApiResponse<Void>>
 
     // Rooms
     @GET("api/rooms")
@@ -41,6 +53,13 @@ interface ApiService {
     @DELETE("api/rooms/{id}")
     suspend fun deleteRoom(@Path("id") id: Long): Response<ApiResponse<Void>>
 
+    @Multipart
+    @POST("api/rooms/{id}/image")
+    suspend fun uploadRoomImage(
+        @Path("id") id: Long,
+        @Part file: MultipartBody.Part
+    ): Response<ApiResponse<RoomResponse>>
+
     // Tenants
     @GET("api/tenants")
     suspend fun getTenants(@Query("page") page: Int = 0, @Query("size") size: Int = 10): Response<ApiResponse<PageResponse<TenantResponse>>>
@@ -52,6 +71,13 @@ interface ApiService {
     suspend fun createTenant(@Body request: CreateTenantRequest): Response<ApiResponse<TenantResponse>>
 
     // Contracts
+    @GET("api/contracts/my")
+    suspend fun getMyContracts(
+        @Query("status") status: String? = null,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 10
+    ): Response<ApiResponse<PageResponse<ContractResponse>>>
+
     @GET("api/contracts")
     suspend fun getContracts(
         @Query("status") status: String? = null,
@@ -102,7 +128,7 @@ interface ApiService {
     suspend fun createPayment(@Body request: CreatePaymentRequest): Response<ApiResponse<PaymentResponse>>
 
     @GET("api/payments/invoices/{invoiceId}")
-    suspend fun getPaymentsByInvoice(@Path("invoiceId") invoiceId: Long): Response<ApiResponse<PageResponse<PaymentResponse>>>
+    suspend fun getPaymentsByInvoice(@Path("invoiceId") invoiceId: Long, @Query("page") page: Int = 0): Response<ApiResponse<PageResponse<PaymentResponse>>>
 
     @GET("api/payments/my")
     suspend fun getMyPayments(@Query("page") page: Int = 0): Response<ApiResponse<PageResponse<PaymentResponse>>>
@@ -114,13 +140,32 @@ interface ApiService {
     @GET("api/reports/dashboard")
     suspend fun getDashboard(): Response<ApiResponse<DashboardResponse>>
 
+    @GET("api/reports/revenue/monthly")
+    suspend fun getMonthlyRevenue(@Query("year") year: Int, @Query("month") month: Int): Response<ApiResponse<RevenueReportResponse>>
+
+    @GET("api/reports/revenue/yearly")
+    suspend fun getYearlyRevenue(@Query("year") year: Int): Response<ApiResponse<RevenueReportResponse>>
+
+    @GET("api/reports/debt")
+    suspend fun getDebtReport(@Query("billingMonth") billingMonth: String? = null): Response<ApiResponse<DebtReportResponse>>
+
+    @GET("api/reports/rooms")
+    suspend fun getRoomStatusReport(): Response<ApiResponse<RoomStatusReportResponse>>
+
     // Notifications
     @GET("api/notifications")
-    suspend fun getNotifications(): Response<ApiResponse<List<NotificationResponse>>>
+    suspend fun getNotifications(@Query("unreadOnly") unreadOnly: Boolean? = null, @Query("page") page: Int = 0): Response<ApiResponse<PageResponse<NotificationResponse>>>
 
     @GET("api/notifications/unread-count")
-    suspend fun getUnreadCount(): Response<ApiResponse<Int>>
+    suspend fun getUnreadCount(): Response<ApiResponse<UnreadCountResponse>>
+
+    @PATCH("api/notifications/{id}/read")
+    suspend fun markNotificationRead(@Path("id") id: Long): Response<ApiResponse<Void>>
 
     @PATCH("api/notifications/read-all")
     suspend fun markAllRead(): Response<ApiResponse<Void>>
+
+    // Invoices - mark paid
+    @PATCH("api/invoices/{id}/paid")
+    suspend fun markInvoicePaid(@Path("id") id: Long, @Body request: MarkPaidRequest): Response<ApiResponse<InvoiceResponse>>
 }

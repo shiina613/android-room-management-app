@@ -13,24 +13,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.kma.lamphoun.roomapp.ui.common.*
 import com.kma.lamphoun.roomapp.ui.landlord.NotificationItem
+import com.kma.lamphoun.roomapp.ui.shared.NotificationViewModel
 import com.kma.lamphoun.roomapp.ui.theme.*
 
 @Composable
-fun TenantNotificationScreen(onNavigateBack: () -> Unit) {
-    // Tenant sees only their own notifications (invoice, payment related)
-    val notifications = MockData.notifications.filter {
-        it.type in listOf("INVOICE_CREATED", "PAYMENT_RECEIVED", "INVOICE_OVERDUE", "CONTRACT_EXPIRING")
-    }
-    val unreadCount = notifications.count { !it.read }
+fun TenantNotificationScreen(
+    onNavigateBack: () -> Unit,
+    viewModel: NotificationViewModel = hiltViewModel()
+) {
+    val notifications by viewModel.notifications.collectAsState()
+    val unreadCount by viewModel.unreadCount.collectAsState()
 
     Scaffold(
-        containerColor = Background,
+        containerColor = SurfaceContainerLow,
         topBar = {
             AppTopBar(title = "Thông báo", onBack = onNavigateBack) {
                 if (unreadCount > 0) {
-                    TextButton(onClick = {}) {
+                    TextButton(onClick = { viewModel.markAllRead() }) {
                         Text("Đọc tất cả", color = Primary, fontSize = 13.sp)
                     }
                 }
@@ -59,10 +61,11 @@ fun TenantNotificationScreen(onNavigateBack: () -> Unit) {
                 item { EmptyState("Không có thông báo nào") }
             } else {
                 items(notifications) { notif ->
-                    NotificationItem(notification = notif)
+                    NotificationItem(notification = notif, onRead = { viewModel.markRead(notif.id) })
                 }
             }
             item { Spacer(Modifier.height(16.dp)) }
         }
     }
 }
+

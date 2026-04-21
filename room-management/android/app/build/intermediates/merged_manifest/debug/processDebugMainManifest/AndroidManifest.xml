@@ -9,6 +9,12 @@
         android:targetSdkVersion="35" />
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Đọc ảnh từ gallery (Android 13+) -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- Đọc storage (Android 12 trở xuống) -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
 
     <permission
         android:name="com.kma.lamphoun.roomapp.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"

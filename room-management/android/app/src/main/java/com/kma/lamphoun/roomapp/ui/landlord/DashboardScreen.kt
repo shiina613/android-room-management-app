@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -22,9 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kma.lamphoun.roomapp.data.remote.dto.DashboardResponse
+import com.kma.lamphoun.roomapp.ui.common.toVnd
 import com.kma.lamphoun.roomapp.ui.theme.*
-import java.text.NumberFormat
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,16 +41,19 @@ fun DashboardScreen(
     var selectedTab by remember { mutableIntStateOf(0) }
 
     Scaffold(
-        containerColor = Background,
+        containerColor = SurfaceContainerLow,
         topBar = {
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
-                            modifier = Modifier.size(32.dp).clip(CircleShape).background(Primary),
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Brush.linearGradient(listOf(GradientStart, GradientEnd))),
                             contentAlignment = Alignment.Center
                         ) { Text("🏠", fontSize = 14.sp) }
-                        Spacer(Modifier.width(8.dp))
+                        Spacer(Modifier.width(10.dp))
                         Text(
                             "Quản Lý Phòng Trọ",
                             style = MaterialTheme.typography.titleMedium,
@@ -61,20 +64,27 @@ fun DashboardScreen(
                 },
                 actions = {
                     IconButton(onClick = onNavigateToNotifications) {
-                        Icon(Icons.Outlined.Notifications, contentDescription = "Thông báo", tint = Primary)
+                        Icon(Icons.Outlined.Notifications, contentDescription = "Thông báo", tint = OnSurfaceVariant)
                     }
                     IconButton(onClick = onNavigateToProfile) {
                         Box(
-                            modifier = Modifier.size(32.dp).clip(CircleShape).background(SurfaceVariant),
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(SurfaceContainer),
                             contentAlignment = Alignment.Center
-                        ) { Icon(Icons.Default.Person, contentDescription = null, tint = Primary, modifier = Modifier.size(20.dp)) }
+                        ) { Icon(Icons.Default.Person, contentDescription = null, tint = Primary, modifier = Modifier.size(18.dp)) }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Background)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = SurfaceContainerLow)
             )
         },
         bottomBar = {
-            NavigationBar(containerColor = Color.White, tonalElevation = 4.dp) {
+            NavigationBar(
+                containerColor = SurfaceContainerLowest,
+                tonalElevation = 0.dp,
+                modifier = Modifier.clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+            ) {
                 listOf(
                     Triple("Tổng quan", Icons.Filled.Dashboard, Icons.Outlined.Dashboard),
                     Triple("Phòng", Icons.Filled.Home, Icons.Outlined.Home),
@@ -91,12 +101,12 @@ fun DashboardScreen(
                                 3 -> onNavigateToReports()
                             }
                         },
-                        icon = { Icon(if (selectedTab == index) filledIcon else outlinedIcon, contentDescription = label) },
+                        icon = { Icon(if (selectedTab == index) filledIcon else outlinedIcon, label) },
                         label = { Text(label, fontSize = 11.sp) },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = Primary,
                             selectedTextColor = Primary,
-                            indicatorColor = PrimaryContainer
+                            indicatorColor = SecondaryContainer
                         )
                     )
                 }
@@ -107,7 +117,11 @@ fun DashboardScreen(
                 onClick = onNavigateToRooms,
                 containerColor = Primary,
                 contentColor = Color.White,
-                shape = CircleShape
+                shape = RoundedCornerShape(16.dp),
+                elevation = FloatingActionButtonDefaults.elevation(
+                    defaultElevation = 0.dp,
+                    pressedElevation = 4.dp
+                )
             ) { Icon(Icons.Default.Add, contentDescription = "Thêm") }
         }
     ) { padding ->
@@ -116,20 +130,32 @@ fun DashboardScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 16.dp),
+                .padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            // Welcome Hero
-            WelcomeSection(name = viewModel.fullName)
+            // Welcome
+            Column {
+                Text(
+                    "Xin chào, ${viewModel.fullName.ifBlank { "Chủ trọ" }} 👋",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = OnBackground
+                )
+                Text(
+                    "Đây là tổng quan hệ thống của bạn",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = OnSurfaceVariant
+                )
+            }
 
-            // Stats Bento Grid
+            // Stats
             when (val s = uiState) {
                 is DashboardUiState.Success -> StatsGrid(s.data)
                 is DashboardUiState.Loading -> StatsGridSkeleton()
                 else -> {}
             }
 
-            // Shortcuts
+            // Quick access
             ShortcutsSection(
                 onRooms = onNavigateToRooms,
                 onContracts = onNavigateToContracts,
@@ -137,95 +163,59 @@ fun DashboardScreen(
                 onReports = onNavigateToReports
             )
 
-            // Recent Activity placeholder
-            RecentActivitySection()
+            // Recent activity
+            if (uiState is DashboardUiState.Success) {
+                RecentActivitySection(uiState as DashboardUiState.Success)
+            }
 
-            Spacer(Modifier.height(80.dp)) // FAB clearance
+            Spacer(Modifier.height(80.dp))
         }
-    }
-}
-
-@Composable
-private fun WelcomeSection(name: String) {
-    Column {
-        Text(
-            text = "Xin chào, ${name.ifBlank { "Chủ trọ" }} 👋",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        Text(
-            text = "Đây là tổng quan hệ thống của bạn",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
     }
 }
 
 @Composable
 private fun StatsGrid(data: DashboardResponse) {
-    val vnd = NumberFormat.getNumberInstance(Locale("vi", "VN"))
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            StatCard(
-                modifier = Modifier.weight(1f),
-                label = "Tổng phòng",
-                value = data.totalRooms.toString(),
-                icon = Icons.Filled.Home,
-                iconBg = Primary.copy(alpha = 0.12f),
-                iconTint = Primary
-            )
-            StatCard(
-                modifier = Modifier.weight(1f),
-                label = "Đang thuê",
-                value = data.occupiedRooms.toString(),
-                icon = Icons.Filled.People,
-                iconBg = StatusOccupied.copy(alpha = 0.12f),
-                iconTint = StatusOccupied
-            )
+            StatCard(Modifier.weight(1f), "Tổng phòng", data.totalRooms.toString(), Icons.Filled.Home, Primary)
+            StatCard(Modifier.weight(1f), "Đang thuê", data.occupiedRooms.toString(), Icons.Filled.People, Tertiary)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            StatCard(
-                modifier = Modifier.weight(1f),
-                label = "Phòng trống",
-                value = data.availableRooms.toString(),
-                icon = Icons.Filled.MeetingRoom,
-                iconBg = StatusAvailable.copy(alpha = 0.12f),
-                iconTint = StatusAvailable
-            )
-            StatCard(
-                modifier = Modifier.weight(1f),
-                label = "Chưa thanh toán",
-                value = data.unpaidInvoices.toString(),
-                icon = Icons.Filled.Receipt,
-                iconBg = StatusUnpaid.copy(alpha = 0.12f),
-                iconTint = StatusUnpaid
-            )
+            StatCard(Modifier.weight(1f), "Phòng trống", data.availableRooms.toString(), Icons.Filled.MeetingRoom, StatusAvailable)
+            StatCard(Modifier.weight(1f), "Chưa TT", data.unpaidInvoices.toString(), Icons.Filled.Receipt, StatusUnpaid)
         }
-        // Revenue card full width
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Primary),
-            elevation = CardDefaults.cardElevation(2.dp)
+        // Revenue hero card
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(Brush.linearGradient(listOf(GradientStart, GradientEnd)))
+                .padding(20.dp)
         ) {
-            Row(
-                modifier = Modifier.padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
-                    modifier = Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = 0.2f)),
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.White.copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center
-                ) { Icon(Icons.Filled.TrendingUp, contentDescription = null, tint = Color.White) }
-                Spacer(Modifier.width(12.dp))
+                ) { Icon(Icons.Filled.TrendingUp, null, tint = Color.White, modifier = Modifier.size(24.dp)) }
+                Spacer(Modifier.width(16.dp))
                 Column {
                     Text("Doanh thu tháng này", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.8f))
                     Text(
-                        "${vnd.format(data.revenueThisMonth.toLong())} ₫",
+                        data.revenueThisMonth.toVnd(),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
+                    if (data.debtThisMonth > 0) {
+                        Text(
+                            "Công nợ: ${data.debtThisMonth.toVnd()}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.7f)
+                        )
+                    }
                 }
             }
         }
@@ -233,28 +223,24 @@ private fun StatsGrid(data: DashboardResponse) {
 }
 
 @Composable
-private fun StatCard(
-    modifier: Modifier = Modifier,
-    label: String,
-    value: String,
-    icon: ImageVector,
-    iconBg: Color,
-    iconTint: Color
-) {
+private fun StatCard(modifier: Modifier, label: String, value: String, icon: ImageVector, color: Color) {
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(1.dp)
+        colors = CardDefaults.cardColors(containerColor = SurfaceContainerLowest),
+        elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Box(
-                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(iconBg),
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(color.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
-            ) { Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(22.dp)) }
+            ) { Icon(icon, null, tint = color, modifier = Modifier.size(20.dp)) }
             Spacer(Modifier.height(12.dp))
-            Text(value, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-            Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(value, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = OnBackground)
+            Text(label, style = MaterialTheme.typography.bodySmall, color = OnSurfaceVariant)
         }
     }
 }
@@ -264,30 +250,25 @@ private fun StatsGridSkeleton() {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             repeat(2) {
-                Card(modifier = Modifier.weight(1f).height(131.dp), shape = RoundedCornerShape(16.dp),
+                Card(modifier = Modifier.weight(1f).height(120.dp), shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = SurfaceContainer)) {}
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             repeat(2) {
-                Card(modifier = Modifier.weight(1f).height(131.dp), shape = RoundedCornerShape(16.dp),
+                Card(modifier = Modifier.weight(1f).height(120.dp), shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = SurfaceContainer)) {}
             }
         }
+        Card(modifier = Modifier.fillMaxWidth().height(88.dp), shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = SurfaceContainer)) {}
     }
 }
 
 @Composable
-private fun ShortcutsSection(
-    onRooms: () -> Unit,
-    onContracts: () -> Unit,
-    onInvoices: () -> Unit,
-    onReports: () -> Unit
-) {
+private fun ShortcutsSection(onRooms: () -> Unit, onContracts: () -> Unit, onInvoices: () -> Unit, onReports: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("Truy cập nhanh", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        }
+        Text("Truy cập nhanh", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = OnBackground)
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             listOf(
                 Triple("Phòng", Icons.Outlined.Home, onRooms),
@@ -295,57 +276,70 @@ private fun ShortcutsSection(
                 Triple("Hóa đơn", Icons.Outlined.Receipt, onInvoices),
                 Triple("Báo cáo", Icons.Outlined.BarChart, onReports)
             ).forEach { (label, icon, onClick) ->
-                ShortcutItem(modifier = Modifier.weight(1f), label = label, icon = icon, onClick = onClick)
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(SurfaceContainerLowest)
+                        .clickable(onClick = onClick)
+                        .padding(vertical = 14.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(SecondaryContainer),
+                        contentAlignment = Alignment.Center
+                    ) { Icon(icon, label, tint = Primary, modifier = Modifier.size(20.dp)) }
+                    Text(label, style = MaterialTheme.typography.labelSmall, color = OnSurface)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun ShortcutItem(modifier: Modifier = Modifier, label: String, icon: ImageVector, onClick: () -> Unit) {
-    Column(
-        modifier = modifier.clip(RoundedCornerShape(12.dp)).background(Color.White)
-            .clickable(onClick = onClick).padding(vertical = 12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        Box(
-            modifier = Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(PrimaryContainer),
-            contentAlignment = Alignment.Center
-        ) { Icon(icon, contentDescription = label, tint = Primary, modifier = Modifier.size(22.dp)) }
-        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface)
-    }
-}
-
-@Composable
-private fun RecentActivitySection() {
+private fun RecentActivitySection(state: DashboardUiState.Success) {
+    val data = state.data
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Hoạt động gần đây", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF181C1B))
+        Text("Tổng quan nhanh", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = OnBackground)
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = SurfaceContainer)
+            colors = CardDefaults.cardColors(containerColor = SurfaceContainerLowest),
+            elevation = CardDefaults.cardElevation(0.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                ActivityItem(icon = Icons.Filled.Receipt, title = "Hóa đơn tháng 3/2026", subtitle = "Phòng 101 - Chờ thanh toán", tint = StatusUnpaid)
-                HorizontalDivider(color = OutlineVariant)
-                ActivityItem(icon = Icons.Filled.CheckCircle, title = "Thanh toán xác nhận", subtitle = "Phòng 202 - Đã thanh toán", tint = StatusPaid)
+                ActivityRow("Hợp đồng đang hiệu lực", "${data.activeContracts}", Icons.Filled.Description, Primary)
+                ActivityRow("Hợp đồng sắp hết hạn (30 ngày)", "${data.expiringIn30Days}", Icons.Filled.Warning, Tertiary)
+                ActivityRow("Hóa đơn quá hạn", "${data.overdueInvoices}", Icons.Filled.Error, StatusOverdue)
+                ActivityRow("Tổng người thuê", "${data.totalTenants}", Icons.Filled.People, Secondary)
             }
         }
     }
 }
 
 @Composable
-private fun ActivityItem(icon: ImageVector, title: String, subtitle: String, tint: Color) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(
-            modifier = Modifier.size(36.dp).clip(CircleShape).background(tint.copy(alpha = 0.12f)),
-            contentAlignment = Alignment.Center
-        ) { Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp)) }
-        Spacer(Modifier.width(12.dp))
-        Column {
-            Text(title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun ActivityRow(label: String, value: String, icon: ImageVector, color: Color) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(color.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) { Icon(icon, null, tint = color, modifier = Modifier.size(16.dp)) }
+            Spacer(Modifier.width(10.dp))
+            Text(label, style = MaterialTheme.typography.bodyMedium, color = OnSurface)
         }
+        Text(value, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = color)
     }
 }
+

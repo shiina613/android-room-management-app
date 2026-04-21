@@ -8,6 +8,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
+import java.util.List;
+
 public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
 
     /** Chống trùng invoice cùng contract + tháng */
@@ -39,4 +42,10 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
                                    @Param("status") InvoiceStatus status,
                                    @Param("contractId") Long contractId,
                                    Pageable pageable);
+
+    /** Tìm invoice UNPAID đã quá due_date (dùng cho scheduled job) */
+    List<Invoice> findByStatusAndDueDateBefore(InvoiceStatus status, LocalDate date);
+
+    /** Tìm invoice UNPAID sắp đến hạn đúng ngày (dùng cho reminder) */
+    List<Invoice> findByStatusAndDueDate(InvoiceStatus status, LocalDate date);
 }

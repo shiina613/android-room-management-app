@@ -57,7 +57,8 @@ public class ContractServiceImpl implements ContractService {
 
         // Không cho 2 hợp đồng ACTIVE cùng lúc
         if (contractRepository.existsByRoomIdAndStatus(room.getId(), ContractStatus.ACTIVE)) {
-            throw new BadRequestException("Room already has an active contract");
+            throw new com.kma.lamphoun.room_management.exception.ConflictException(
+                    "Room already has an active contract");
         }
 
         Contract contract = Contract.builder()
@@ -189,6 +190,22 @@ public class ContractServiceImpl implements ContractService {
     private User findUserByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
+    }
+
+    @Override
+    public Long getLandlordIdByUsername(String username) {
+        return findUserByUsername(username).getId();
+    }
+
+    @Override
+    public Page<ContractResponse> getByTenantUsername(String tenantUsername, ContractStatus status, Pageable pageable) {
+        User tenant = findUserByUsername(tenantUsername);
+        if (status != null) {
+            return contractRepository.search(status, null, tenant.getId(), null, pageable)
+                    .map(contractMapper::toResponse);
+        }
+        return contractRepository.findByTenantId(tenant.getId(), pageable)
+                .map(contractMapper::toResponse);
     }
 
     private User findTenantById(Long id) {

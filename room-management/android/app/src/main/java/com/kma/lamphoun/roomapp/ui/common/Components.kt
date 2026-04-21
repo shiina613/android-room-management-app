@@ -5,15 +5,18 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.BrokenImage
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.SubcomposeAsyncImage
 import com.kma.lamphoun.roomapp.ui.theme.*
 import java.text.NumberFormat
 import java.util.Locale
@@ -33,7 +36,7 @@ fun AppTopBar(title: String, onBack: (() -> Unit)? = null, actions: @Composable 
             }
         },
         actions = actions,
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = Background)
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = SurfaceContainerLow)
     )
 }
 
@@ -91,14 +94,33 @@ fun EmptyState(message: String, modifier: Modifier = Modifier) {
     }
 }
 
-// TODO: Replace Box below with AsyncImage(coil) when real image URLs are available
+// Hiển thị ảnh phòng từ URL, fallback về placeholder nếu không có ảnh
 @Composable
-fun RoomImagePlaceholder(modifier: Modifier = Modifier) {
-    // TODO: Replace with: AsyncImage(model = imageUrl, contentDescription = null, modifier = modifier, contentScale = ContentScale.Crop)
-    Box(
-        modifier = modifier.background(SurfaceVariant),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("📷 Ảnh phòng", color = OnSurfaceVariant, fontSize = 14.sp)
+fun RoomImagePlaceholder(imageUrl: String? = null, modifier: Modifier = Modifier) {
+    if (!imageUrl.isNullOrBlank()) {
+        SubcomposeAsyncImage(
+            model = imageUrl,
+            contentDescription = "Ảnh phòng",
+            modifier = modifier,
+            contentScale = ContentScale.Crop,
+            loading = {
+                Box(modifier = modifier.background(SurfaceVariant), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Primary, strokeWidth = 2.dp)
+                }
+            },
+            error = {
+                Box(modifier = modifier.background(SurfaceVariant), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.BrokenImage, contentDescription = null, tint = OnSurfaceVariant, modifier = Modifier.size(32.dp))
+                }
+            }
+        )
+    } else {
+        Box(
+            modifier = modifier.background(SurfaceVariant),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("📷", fontSize = 28.sp, color = OnSurfaceVariant)
+        }
     }
 }
+

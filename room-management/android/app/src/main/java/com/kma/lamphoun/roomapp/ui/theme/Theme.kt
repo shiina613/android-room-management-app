@@ -13,6 +13,10 @@ private val LightColorScheme = lightColorScheme(
     onSecondary = OnSecondary,
     secondaryContainer = SecondaryContainer,
     onSecondaryContainer = OnSecondaryContainer,
+    tertiary = Tertiary,
+    onTertiary = OnTertiary,
+    tertiaryContainer = TertiaryContainer,
+    onTertiaryContainer = OnTertiaryContainer,
     error = Error,
     onError = OnError,
     errorContainer = ErrorContainer,
@@ -34,3 +38,4 @@ fun RoomAppTheme(content: @Composable () -> Unit) {
         content = content
     )
 }
+

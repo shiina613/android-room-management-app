@@ -38,10 +38,12 @@ public class ReportController {
     @GetMapping("/revenue/monthly")
     public ResponseEntity<ApiResponse<RevenueReportResponse>> getMonthlyRevenue(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam(defaultValue = "#{T(java.time.YearMonth).now().year}") int year,
-            @RequestParam(defaultValue = "#{T(java.time.YearMonth).now().monthValue}") int month) {
+            @RequestParam(defaultValue = "0") int year,
+            @RequestParam(defaultValue = "0") int month) {
+        int y = year == 0 ? java.time.YearMonth.now().getYear() : year;
+        int m = month == 0 ? java.time.YearMonth.now().getMonthValue() : month;
         return ResponseEntity.ok(ApiResponse.success(
-                reportService.getMonthlyRevenue(userDetails.getUsername(), year, month)));
+                reportService.getMonthlyRevenue(userDetails.getUsername(), y, m)));
     }
 
     /**
@@ -51,9 +53,10 @@ public class ReportController {
     @GetMapping("/revenue/yearly")
     public ResponseEntity<ApiResponse<RevenueReportResponse>> getYearlyRevenue(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam(defaultValue = "#{T(java.time.Year).now().value}") int year) {
+            @RequestParam(defaultValue = "0") int year) {
+        int y = year == 0 ? java.time.Year.now().getValue() : year;
         return ResponseEntity.ok(ApiResponse.success(
-                reportService.getYearlyRevenue(userDetails.getUsername(), year)));
+                reportService.getYearlyRevenue(userDetails.getUsername(), y)));
     }
 
     /**

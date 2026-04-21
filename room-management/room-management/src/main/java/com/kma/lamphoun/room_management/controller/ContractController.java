@@ -40,17 +40,38 @@ public class ContractController {
     }
 
     /**
-     * GET /api/contracts?status=ACTIVE&landlordId=1&tenantId=2&roomId=3
-     * Tìm kiếm hợp đồng — LANDLORD và ADMIN
+     * GET /api/contracts/my
+     * Tenant xem hợp đồng của chính mình
+     */
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('ROLE_TENANT')")
+    public ResponseEntity<ApiResponse<Page<ContractResponse>>> getMyContracts(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(required = false) ContractStatus status,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(
+                contractService.getByTenantUsername(userDetails.getUsername(), status, pageable)));
+    }
+
+    /**
+     * GET /api/contracts?status=ACTIVE&tenantId=2&roomId=3
+     * Tìm kiếm hợp đồng — LANDLORD tự động filter theo mình, ADMIN xem tất cả
      */
     @GetMapping
     @PreAuthorize("hasAnyRole('ROLE_LANDLORD', 'ROLE_ADMIN')")
     public ResponseEntity<ApiResponse<Page<ContractResponse>>> search(
+            @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(required = false) ContractStatus status,
-            @RequestParam(required = false) Long landlordId,
             @RequestParam(required = false) Long tenantId,
             @RequestParam(required = false) Long roomId,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        // LANDLORD chỉ xem hợp đồng của mình; ADMIN có thể truyền landlordId hoặc xem tất cả
+        Long landlordId = null;
+        if (userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_LANDLORD"))) {
+            // Lấy landlordId từ username
+            landlordId = contractService.getLandlordIdByUsername(userDetails.getUsername());
+        }
         return ResponseEntity.ok(ApiResponse.success(
                 contractService.search(status, landlordId, tenantId, roomId, pageable)));
     }

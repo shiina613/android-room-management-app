@@ -5,8 +5,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -15,6 +13,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.kma.lamphoun.roomapp.data.remote.dto.CreateContractRequest
 import com.kma.lamphoun.roomapp.ui.common.*
 import com.kma.lamphoun.roomapp.ui.theme.*
 
@@ -22,8 +22,20 @@ import com.kma.lamphoun.roomapp.ui.theme.*
 @Composable
 fun ContractFormScreen(
     onNavigateBack: () -> Unit,
-    onSaved: () -> Unit
+    onSaved: () -> Unit,
+    viewModel: ContractViewModel = hiltViewModel()
 ) {
+    val availableRooms by viewModel.availableRooms.collectAsState()
+    val tenants by viewModel.tenants.collectAsState()
+    val formState by viewModel.formState.collectAsState()
+
+    LaunchedEffect(formState) {
+        if (formState is ContractFormUiState.Success) {
+            viewModel.resetFormState()
+            onSaved()
+        }
+    }
+
     var selectedRoomId by remember { mutableStateOf<Long?>(null) }
     var selectedTenantId by remember { mutableStateOf<Long?>(null) }
     var startDate by remember { mutableStateOf("2026-04-01") }
@@ -33,18 +45,15 @@ fun ContractFormScreen(
     var roomDropdownExpanded by remember { mutableStateOf(false) }
     var tenantDropdownExpanded by remember { mutableStateOf(false) }
 
-    val availableRooms = MockData.rooms.filter { it.status == "AVAILABLE" }
-    val tenants = MockData.tenants
     val selectedRoom = availableRooms.find { it.id == selectedRoomId }
     val selectedTenant = tenants.find { it.id == selectedTenantId }
 
-    // Auto-fill rent from room price
     LaunchedEffect(selectedRoomId) {
         selectedRoom?.let { monthlyRent = it.price.toLong().toString() }
     }
 
     Scaffold(
-        containerColor = Background,
+        containerColor = SurfaceContainerLow,
         topBar = { AppTopBar(title = "Tạo hợp đồng", onBack = onNavigateBack) }
     ) { padding ->
         Column(
@@ -53,12 +62,10 @@ fun ContractFormScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             SectionCard(title = "Thông tin hợp đồng") {
-                // Room picker
                 ExposedDropdownMenuBox(expanded = roomDropdownExpanded, onExpandedChange = { roomDropdownExpanded = it }) {
                     OutlinedTextField(
                         value = selectedRoom?.title ?: "Chọn phòng",
-                        onValueChange = {},
-                        readOnly = true,
+                        onValueChange = {}, readOnly = true,
                         label = { Text("Phòng *") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = roomDropdownExpanded) },
                         modifier = Modifier.fillMaxWidth().menuAnchor(),
@@ -66,6 +73,9 @@ fun ContractFormScreen(
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Primary, focusedLabelColor = Primary)
                     )
                     ExposedDropdownMenu(expanded = roomDropdownExpanded, onDismissRequest = { roomDropdownExpanded = false }) {
+                        if (availableRooms.isEmpty()) {
+                            DropdownMenuItem(text = { Text("Không có phòng trống") }, onClick = { roomDropdownExpanded = false })
+                        }
                         availableRooms.forEach { room ->
                             DropdownMenuItem(
                                 text = { Text("${room.title} - ${room.price.toVnd()}") },
@@ -76,12 +86,10 @@ fun ContractFormScreen(
                 }
                 Spacer(Modifier.height(12.dp))
 
-                // Tenant picker
                 ExposedDropdownMenuBox(expanded = tenantDropdownExpanded, onExpandedChange = { tenantDropdownExpanded = it }) {
                     OutlinedTextField(
                         value = selectedTenant?.fullName ?: "Chọn người thuê",
-                        onValueChange = {},
-                        readOnly = true,
+                        onValueChange = {}, readOnly = true,
                         label = { Text("Người thuê *") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = tenantDropdownExpanded) },
                         modifier = Modifier.fillMaxWidth().menuAnchor(),
@@ -89,9 +97,12 @@ fun ContractFormScreen(
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Primary, focusedLabelColor = Primary)
                     )
                     ExposedDropdownMenu(expanded = tenantDropdownExpanded, onDismissRequest = { tenantDropdownExpanded = false }) {
+                        if (tenants.isEmpty()) {
+                            DropdownMenuItem(text = { Text("Không có người thuê") }, onClick = { tenantDropdownExpanded = false })
+                        }
                         tenants.forEach { tenant ->
                             DropdownMenuItem(
-                                text = { Text("${tenant.fullName} - ${tenant.phone}") },
+                                text = { Text("${tenant.fullName} - ${tenant.phone ?: ""}") },
                                 onClick = { selectedTenantId = tenant.id; tenantDropdownExpanded = false }
                             )
                         }
@@ -132,12 +143,9 @@ fun ContractFormScreen(
                 )
             }
 
-            // Summary preview
             if (selectedRoom != null && selectedTenant != null) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = PrimaryContainer)
-                ) {
+                Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = SecondaryContainer)) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text("Xem trước hợp đồng", fontWeight = FontWeight.Bold, color = Primary)
                         InfoRow("Phòng", selectedRoom.title)
@@ -148,16 +156,33 @@ fun ContractFormScreen(
                 }
             }
 
+            if (formState is ContractFormUiState.Error) {
+                Text((formState as ContractFormUiState.Error).message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
+
             Button(
-                onClick = onSaved,
-                enabled = selectedRoomId != null && selectedTenantId != null && monthlyRent.isNotBlank(),
+                onClick = {
+                    viewModel.createContract(
+                        CreateContractRequest(
+                            roomId = selectedRoomId!!,
+                            tenantId = selectedTenantId!!,
+                            startDate = startDate,
+                            endDate = endDate,
+                            deposit = deposit.toDoubleOrNull() ?: 0.0,
+                            monthlyRent = monthlyRent.toDoubleOrNull() ?: 0.0
+                        )
+                    )
+                },
+                enabled = selectedRoomId != null && selectedTenantId != null && monthlyRent.isNotBlank() && formState !is ContractFormUiState.Loading,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Primary)
             ) {
-                Text("Tạo hợp đồng", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                if (formState is ContractFormUiState.Loading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
+                else Text("Tạo hợp đồng", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
             }
             Spacer(Modifier.height(16.dp))
         }
     }
 }
+

@@ -46,3 +46,4 @@ object NavRoutes {
     fun paymentCreate(invoiceId: Long) = "landlord/payments/create/$invoiceId"
     fun tenantInvoiceDetail(invoiceId: Long) = "tenant/invoices/$invoiceId"
 }
+

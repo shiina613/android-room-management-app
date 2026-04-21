@@ -20,6 +20,7 @@ public class RoomMapper {
                 .servicePrice(room.getServicePrice())
                 .status(room.getStatus())
                 .category(room.getCategory())
+                .imageUrl(room.getImageUrl())
                 .ownerId(room.getOwner().getId())
                 .ownerName(room.getOwner().getFullName())
                 .createdAt(room.getCreatedAt())

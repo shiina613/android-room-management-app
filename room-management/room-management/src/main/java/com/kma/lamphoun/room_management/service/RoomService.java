@@ -20,5 +20,7 @@ public interface RoomService {
 
     RoomResponse updateStatus(Long id, String ownerUsername, UpdateRoomStatusRequest request);
 
+    RoomResponse updateImage(Long id, String ownerUsername, String imageUrl);
+
     void delete(Long id, String ownerUsername);
 }

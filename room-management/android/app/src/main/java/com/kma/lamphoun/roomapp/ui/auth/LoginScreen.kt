@@ -21,9 +21,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.kma.lamphoun.roomapp.ui.theme.Background
-import com.kma.lamphoun.roomapp.ui.theme.Primary
-import com.kma.lamphoun.roomapp.ui.theme.Secondary
+import com.kma.lamphoun.roomapp.ui.theme.*
 
 @Composable
 fun LoginScreen(
@@ -46,26 +44,25 @@ fun LoginScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Background)
+            .background(SurfaceContainerLow)
     ) {
-        // Decorative background circles (Figma: Asymmetric Sanctuary Vibe)
+        // Decorative gradient blobs
         Box(
             modifier = Modifier
-                .size(280.dp)
-                .offset(x = (-60).dp, y = (-60).dp)
+                .size(260.dp)
+                .align(Alignment.TopEnd)
+                .offset(x = 80.dp, y = (-40).dp)
                 .background(
-                    brush = Brush.radialGradient(listOf(Primary.copy(alpha = 0.08f), Color.Transparent)),
-                    shape = RoundedCornerShape(50)
+                    Brush.radialGradient(listOf(Primary.copy(alpha = 0.07f), Color.Transparent))
                 )
         )
         Box(
             modifier = Modifier
                 .size(200.dp)
-                .align(Alignment.BottomEnd)
-                .offset(x = 60.dp, y = 60.dp)
+                .align(Alignment.BottomStart)
+                .offset(x = (-50).dp, y = 50.dp)
                 .background(
-                    brush = Brush.radialGradient(listOf(Secondary.copy(alpha = 0.06f), Color.Transparent)),
-                    shape = RoundedCornerShape(50)
+                    Brush.radialGradient(listOf(Secondary.copy(alpha = 0.05f), Color.Transparent))
                 )
         )
 
@@ -75,46 +72,57 @@ fun LoginScreen(
                 .padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.Center
         ) {
-            // Header
+            // Logo + app name
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(Primary),
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(
+                            Brush.linearGradient(
+                                colors = listOf(GradientStart, GradientEnd),
+                                start = androidx.compose.ui.geometry.Offset(0f, 0f),
+                                end = androidx.compose.ui.geometry.Offset(44f, 44f)
+                            )
+                        ),
                     contentAlignment = Alignment.Center
-                ) {
-                    Text("🏠", fontSize = 18.sp)
+                ) { Text("🏠", fontSize = 20.sp) }
+                Spacer(Modifier.width(12.dp))
+                Column {
+                    Text(
+                        "Quản Lý Phòng Trọ",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Primary
+                    )
+                    Text(
+                        "Smart Room Manager",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = OnSurfaceVariant
+                    )
                 }
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    text = "Quản Lý Phòng Trọ",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = Primary,
-                    fontWeight = FontWeight.Bold
-                )
             }
 
             Spacer(Modifier.height(32.dp))
 
-            // Card
+            // Login card
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                colors = CardDefaults.cardColors(containerColor = SurfaceContainerLowest),
+                elevation = CardDefaults.cardElevation(0.dp)
             ) {
                 Column(modifier = Modifier.padding(24.dp)) {
                     Text(
-                        text = "Đăng nhập",
+                        "Đăng nhập",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = OnBackground
                     )
                     Text(
-                        text = "Chào mừng bạn trở lại",
+                        "Chào mừng bạn trở lại",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = OnSurfaceVariant
                     )
                     Spacer(Modifier.height(24.dp))
 
@@ -127,7 +135,8 @@ fun LoginScreen(
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Primary,
-                            focusedLabelColor = Primary
+                            focusedLabelColor = Primary,
+                            unfocusedBorderColor = OutlineVariant
                         )
                     )
                     Spacer(Modifier.height(12.dp))
@@ -144,7 +153,7 @@ fun LoginScreen(
                                 Icon(
                                     if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    tint = OnSurfaceVariant
                                 )
                             }
                         },
@@ -152,14 +161,15 @@ fun LoginScreen(
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Primary,
-                            focusedLabelColor = Primary
+                            focusedLabelColor = Primary,
+                            unfocusedBorderColor = OutlineVariant
                         )
                     )
 
                     if (uiState is AuthUiState.Error) {
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            text = (uiState as AuthUiState.Error).message,
+                            (uiState as AuthUiState.Error).message,
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall
                         )
@@ -167,21 +177,36 @@ fun LoginScreen(
 
                     Spacer(Modifier.height(20.dp))
 
-                    Button(
-                        onClick = { viewModel.login(username, password) },
-                        enabled = username.isNotBlank() && password.isNotBlank() && uiState !is AuthUiState.Loading,
-                        modifier = Modifier.fillMaxWidth().height(52.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                    // Gradient primary button
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(
+                                if (username.isNotBlank() && password.isNotBlank() && uiState !is AuthUiState.Loading)
+                                    Brush.linearGradient(listOf(GradientStart, GradientEnd))
+                                else
+                                    Brush.linearGradient(listOf(OutlineVariant, OutlineVariant))
+                            ),
+                        contentAlignment = Alignment.Center
                     ) {
-                        if (uiState is AuthUiState.Loading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                color = Color.White,
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Text("Đăng nhập", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                        Button(
+                            onClick = { viewModel.login(username, password) },
+                            enabled = username.isNotBlank() && password.isNotBlank() && uiState !is AuthUiState.Loading,
+                            modifier = Modifier.fillMaxSize(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Transparent,
+                                disabledContainerColor = Color.Transparent
+                            ),
+                            elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp, 0.dp)
+                        ) {
+                            if (uiState is AuthUiState.Loading) {
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                            } else {
+                                Text("Đăng nhập", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = Color.White)
+                            }
                         }
                     }
                 }
@@ -194,11 +219,7 @@ fun LoginScreen(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    "Chưa có tài khoản?",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Text("Chưa có tài khoản?", style = MaterialTheme.typography.bodyMedium, color = OnSurfaceVariant)
                 TextButton(onClick = onNavigateToRegister) {
                     Text("Đăng ký ngay", color = Primary, fontWeight = FontWeight.SemiBold)
                 }
@@ -206,3 +227,4 @@ fun LoginScreen(
         }
     }
 }
+

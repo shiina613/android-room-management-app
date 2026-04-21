@@ -19,4 +19,10 @@ public interface ContractService {
     ContractResponse terminate(Long id, String landlordUsername, TerminateContractRequest request);
 
     ContractResponse extend(Long id, String landlordUsername, ExtendContractRequest request);
+
+    /** Lấy landlordId từ username — dùng trong controller để auto-filter */
+    Long getLandlordIdByUsername(String username);
+
+    /** Tenant xem hợp đồng của chính mình */
+    Page<ContractResponse> getByTenantUsername(String tenantUsername, ContractStatus status, Pageable pageable);
 }

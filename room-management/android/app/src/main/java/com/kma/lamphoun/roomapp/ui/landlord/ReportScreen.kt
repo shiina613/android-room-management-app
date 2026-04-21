@@ -5,8 +5,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,95 +14,113 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.kma.lamphoun.roomapp.data.remote.dto.DashboardResponse
+import com.kma.lamphoun.roomapp.data.remote.dto.DebtReportResponse
+import com.kma.lamphoun.roomapp.data.remote.dto.RevenueReportResponse
 import com.kma.lamphoun.roomapp.ui.common.*
 import com.kma.lamphoun.roomapp.ui.theme.*
 
 @Composable
-fun ReportScreen(onNavigateBack: () -> Unit) {
-    val dashboard = MockData.dashboard
-
-    // Mock monthly revenue data
-    val monthlyRevenue = listOf(
-        "T1" to 28_000_000L, "T2" to 29_500_000L, "T3" to 31_500_000L,
-        "T4" to 30_000_000L, "T5" to 32_000_000L, "T6" to 31_000_000L,
-        "T7" to 33_500_000L, "T8" to 34_000_000L, "T9" to 31_500_000L,
-        "T10" to 30_500_000L, "T11" to 29_000_000L, "T12" to 0L
-    )
-    val maxRevenue = monthlyRevenue.maxOf { it.second }.toFloat()
+fun ReportScreen(
+    onNavigateBack: () -> Unit,
+    viewModel: ReportViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
-        containerColor = Background,
+        containerColor = SurfaceContainerLow,
         topBar = { AppTopBar(title = "Báo cáo", onBack = onNavigateBack) }
     ) { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Summary cards
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                SummaryCard(modifier = Modifier.weight(1f), label = "Doanh thu tháng này", value = dashboard.revenueThisMonth.toVnd(), icon = "💰", color = Primary)
-                SummaryCard(modifier = Modifier.weight(1f), label = "Công nợ", value = dashboard.unpaidAmount.toVnd(), icon = "⚠️", color = StatusUnpaid)
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                SummaryCard(modifier = Modifier.weight(1f), label = "Tỷ lệ lấp đầy", value = "${(dashboard.occupiedRooms * 100 / dashboard.totalRooms)}%", icon = "📊", color = StatusAvailable)
-                SummaryCard(modifier = Modifier.weight(1f), label = "Tổng người thuê", value = "${dashboard.totalTenants} người", icon = "👥", color = Secondary)
-            }
+        when (val s = uiState) {
+            is ReportUiState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Primary) }
+            is ReportUiState.Error -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(s.message) }
+            is ReportUiState.Success -> ReportContent(
+                modifier = Modifier.padding(padding),
+                dashboard = s.dashboard,
+                yearlyRevenue = s.yearlyRevenue,
+                debtReport = s.debtReport
+            )
+        }
+    }
+}
 
-            // Monthly revenue bar chart (manual)
-            SectionCard(title = "Doanh thu 12 tháng (2026)") {
+@Composable
+private fun ReportContent(
+    modifier: Modifier = Modifier,
+    dashboard: DashboardResponse,
+    yearlyRevenue: RevenueReportResponse?,
+    debtReport: DebtReportResponse?
+) {
+    Column(
+        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            SummaryCard(modifier = Modifier.weight(1f), label = "Doanh thu tháng này", value = dashboard.revenueThisMonth.toVnd(), icon = "💰", color = Primary)
+            SummaryCard(modifier = Modifier.weight(1f), label = "Công nợ", value = dashboard.debtThisMonth.toVnd(), icon = "⚠️", color = StatusUnpaid)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            SummaryCard(modifier = Modifier.weight(1f), label = "Tỷ lệ lấp đầy", value = "${dashboard.occupancyRate}%", icon = "📊", color = StatusAvailable)
+            SummaryCard(modifier = Modifier.weight(1f), label = "Tổng người thuê", value = "${dashboard.totalTenants} người", icon = "👥", color = Secondary)
+        }
+
+        // Monthly revenue bar chart
+        if (yearlyRevenue?.monthly != null) {
+            val monthly = yearlyRevenue.monthly
+            val maxRevenue = monthly.maxOfOrNull { it.invoiced }?.toFloat() ?: 1f
+            SectionCard(title = "Doanh thu 12 tháng (${yearlyRevenue.year})") {
                 Row(
                     modifier = Modifier.fillMaxWidth().height(140.dp),
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.Bottom
                 ) {
-                    monthlyRevenue.forEach { (month, revenue) ->
-                        val heightFraction = if (maxRevenue > 0) revenue / maxRevenue else 0f
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Bottom
-                        ) {
-                            Box(
-                                modifier = Modifier.fillMaxWidth().fillMaxHeight(heightFraction.coerceAtLeast(0.02f))
-                                    .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
-                                    .background(if (revenue > 0) Primary else SurfaceVariant)
-                            )
+                    monthly.forEach { m ->
+                        val heightFraction = if (maxRevenue > 0) (m.invoiced / maxRevenue).toFloat() else 0f
+                        Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom) {
+                            Box(modifier = Modifier.fillMaxWidth().fillMaxHeight(heightFraction.coerceAtLeast(0.02f))
+                                .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                                .background(if (m.invoiced > 0) Primary else SurfaceVariant))
                             Spacer(Modifier.height(4.dp))
-                            Text(month, fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(m.month.takeLast(2), fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
                 Spacer(Modifier.height(8.dp))
-                Text("Tổng năm: ${monthlyRevenue.sumOf { it.second }.toVnd()}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Tổng năm: ${yearlyRevenue.totalInvoiced.toVnd()}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+        }
 
-            // Room status
-            SectionCard(title = "Tình trạng phòng") {
-                RoomStatusBar("Đang thuê", dashboard.occupiedRooms, dashboard.totalRooms, StatusOccupied)
-                Spacer(Modifier.height(8.dp))
-                RoomStatusBar("Phòng trống", dashboard.availableRooms, dashboard.totalRooms, StatusAvailable)
-                Spacer(Modifier.height(8.dp))
-                RoomStatusBar("Bảo trì", dashboard.totalRooms - dashboard.occupiedRooms - dashboard.availableRooms, dashboard.totalRooms, StatusMaintenance)
-            }
+        // Room status
+        SectionCard(title = "Tình trạng phòng") {
+            RoomStatusBar("Đang thuê", dashboard.occupiedRooms.toInt(), dashboard.totalRooms.toInt(), StatusOccupied)
+            Spacer(Modifier.height(8.dp))
+            RoomStatusBar("Phòng trống", dashboard.availableRooms.toInt(), dashboard.totalRooms.toInt(), StatusAvailable)
+            Spacer(Modifier.height(8.dp))
+            RoomStatusBar("Bảo trì", dashboard.maintenanceRooms.toInt(), dashboard.totalRooms.toInt(), StatusMaintenance)
+        }
 
-            // Debt report
-            SectionCard(title = "Công nợ tháng 3/2026") {
-                MockData.invoices.filter { it.status == "UNPAID" }.forEach { inv ->
-                    val contract = MockData.contracts.find { it.id == inv.contractId }
+        // Debt report
+        if (debtReport != null && debtReport.details.isNotEmpty()) {
+            SectionCard(title = "Công nợ (${debtReport.debtorCount} người thuê)") {
+                debtReport.details.take(5).forEach { detail ->
                     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Column {
-                            Text(contract?.roomTitle ?: "Phòng #${inv.contractId}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
-                            Text(contract?.tenantName ?: "—", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(detail.roomTitle ?: "—", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
+                            Text(detail.tenantName ?: "—", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        Text(inv.totalAmount.toVnd(), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = StatusUnpaid)
+                        Text(detail.remaining.toVnd(), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = StatusUnpaid)
                     }
                     HorizontalDivider(color = OutlineVariant, modifier = Modifier.padding(vertical = 4.dp))
                 }
+                if (debtReport.details.size > 5) {
+                    Text("... và ${debtReport.details.size - 5} khoản khác", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
-
-            Spacer(Modifier.height(16.dp))
         }
+
+        Spacer(Modifier.height(16.dp))
     }
 }
 
@@ -134,3 +150,4 @@ private fun RoomStatusBar(label: String, count: Int, total: Int, color: Color) {
         Text("$count/$total", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium, modifier = Modifier.width(36.dp))
     }
 }
+

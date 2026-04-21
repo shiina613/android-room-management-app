@@ -6,6 +6,7 @@ import com.kma.lamphoun.room_management.common.enums.RoomStatus;
 import com.kma.lamphoun.room_management.dto.request.RoomRequest;
 import com.kma.lamphoun.room_management.dto.request.UpdateRoomStatusRequest;
 import com.kma.lamphoun.room_management.dto.response.RoomResponse;
+import com.kma.lamphoun.room_management.service.FileStorageService;
 import com.kma.lamphoun.room_management.service.RoomService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/rooms")
@@ -26,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 public class RoomController {
 
     private final RoomService roomService;
+    private final FileStorageService fileStorageService;
 
     /**
      * POST /api/rooms
@@ -103,5 +106,25 @@ public class RoomController {
             @AuthenticationPrincipal UserDetails userDetails) {
         roomService.delete(id, userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success("Room deleted", null));
+    }
+
+    /**
+     * POST /api/rooms/{id}/image
+     * Upload ảnh đại diện cho phòng — chỉ owner
+     */
+    @PostMapping(value = "/{id}/image", consumes = "multipart/form-data")
+    @PreAuthorize("hasRole('ROLE_LANDLORD')")
+    public ResponseEntity<ApiResponse<RoomResponse>> uploadImage(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam("file") MultipartFile file) {
+        try {
+            String imageUrl = fileStorageService.storeRoomImage(file);
+            RoomResponse room = roomService.updateImage(id, userDetails.getUsername(), imageUrl);
+            return ResponseEntity.ok(ApiResponse.success("Image uploaded", room));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to upload image: " + e.getMessage()));
+        }
     }
 }

@@ -56,6 +56,10 @@ public class Room {
     @Column(nullable = false)
     private RoomCategory category;
 
+    /** URL ảnh đại diện phòng (lưu tại /uploads/rooms/) */
+    @Column(length = 500)
+    private String imageUrl;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;

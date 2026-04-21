@@ -63,7 +63,8 @@ fun RoomNavGraph(navController: NavHostController = rememberNavController()) {
             RoomListScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToCreate = { navController.navigate(NavRoutes.ROOM_CREATE) },
-                onNavigateToDetail = { navController.navigate(NavRoutes.roomDetail(it)) }
+                onNavigateToDetail = { navController.navigate(NavRoutes.roomDetail(it)) },
+                onNavigateToMeterReading = { navController.navigate(NavRoutes.meterReading(it)) }
             )
         }
         composable(NavRoutes.ROOM_CREATE) {
@@ -151,7 +152,8 @@ fun RoomNavGraph(navController: NavHostController = rememberNavController()) {
                 onLogout = {
                     authViewModel.logout()
                     navController.navigate(NavRoutes.LOGIN) { popUpTo(0) { inclusive = true } }
-                }
+                },
+                authViewModel = authViewModel
             )
         }
 
@@ -189,3 +191,4 @@ fun RoomNavGraph(navController: NavHostController = rememberNavController()) {
         }
     }
 }
+

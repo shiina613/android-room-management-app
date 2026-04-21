@@ -58,7 +58,7 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         // Chống trùng invoice cùng contract + tháng
         if (invoiceRepository.existsByContractIdAndBillingMonth(contract.getId(), request.getBillingMonth())) {
-            throw new BadRequestException(
+            throw new com.kma.lamphoun.room_management.exception.ConflictException(
                     "Invoice for contract " + contract.getId()
                     + " in month " + request.getBillingMonth() + " already exists");
         }

@@ -74,3 +74,4 @@ class AuthViewModel @Inject constructor(
 
     fun resetState() { _uiState.value = AuthUiState.Idle }
 }
+

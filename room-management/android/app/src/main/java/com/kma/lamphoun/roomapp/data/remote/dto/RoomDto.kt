@@ -11,7 +11,8 @@ data class RoomResponse(
     val status: String,
     val category: String,
     val description: String?,
-    val ownerName: String?
+    val ownerName: String?,
+    val imageUrl: String? = null
 )
 
 data class RoomRequest(
@@ -35,3 +36,4 @@ data class PageResponse<T>(
     val number: Int,
     val size: Int
 )
+

@@ -18,28 +18,42 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.kma.lamphoun.roomapp.ui.common.*
 import com.kma.lamphoun.roomapp.ui.theme.*
+import java.time.YearMonth
 
 @Composable
-fun MeterReadingScreen(roomId: Long, onNavigateBack: () -> Unit, onSaved: () -> Unit) {
-    val room = MockData.rooms.find { it.id == roomId } ?: MockData.rooms.first()
-    val history = MockData.meterReadings.filter { it.roomId == roomId }
-    val latest = history.firstOrNull()
+fun MeterReadingScreen(
+    roomId: Long,
+    onNavigateBack: () -> Unit,
+    onSaved: () -> Unit,
+    viewModel: MeterReadingViewModel = hiltViewModel()
+) {
+    val saveState by viewModel.saveState.collectAsState()
+    val history by viewModel.history.collectAsState()
+    val latestReading by viewModel.latestReading.collectAsState()
 
-    var billingMonth by remember { mutableStateOf("2026-04") }
-    var elecPrev by remember { mutableStateOf(latest?.electricCurrent?.toLong()?.toString() ?: "0") }
+    LaunchedEffect(roomId) { viewModel.loadHistory(roomId) }
+    LaunchedEffect(saveState) {
+        if (saveState is MeterReadingUiState.Success) {
+            viewModel.resetState()
+            onSaved()
+        }
+    }
+
+    val currentMonth = YearMonth.now().toString()
+    var billingMonth by remember { mutableStateOf(currentMonth) }
+    var elecPrev by remember(latestReading) { mutableStateOf(latestReading?.electricCurrent?.toLong()?.toString() ?: "0") }
     var elecCurr by remember { mutableStateOf("") }
-    var waterPrev by remember { mutableStateOf(latest?.waterCurrent?.toLong()?.toString() ?: "0") }
+    var waterPrev by remember(latestReading) { mutableStateOf(latestReading?.waterCurrent?.toLong()?.toString() ?: "0") }
     var waterCurr by remember { mutableStateOf("") }
 
     val elecUsage = (elecCurr.toLongOrNull() ?: 0) - (elecPrev.toLongOrNull() ?: 0)
     val waterUsage = (waterCurr.toLongOrNull() ?: 0) - (waterPrev.toLongOrNull() ?: 0)
-    val elecAmount = elecUsage * room.elecPrice.toLong()
-    val waterAmount = waterUsage * room.waterPrice.toLong()
 
     Scaffold(
-        containerColor = Background,
+        containerColor = SurfaceContainerLow,
         topBar = { AppTopBar(title = "Nhập chỉ số điện nước", onBack = onNavigateBack) }
     ) { padding ->
         Column(
@@ -47,24 +61,6 @@ fun MeterReadingScreen(roomId: Long, onNavigateBack: () -> Unit, onSaved: () -> 
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Room info
-            Card(
-                modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Primary)
-            ) {
-                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = 0.2f)),
-                        contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.Home, null, tint = Color.White)
-                    }
-                    Spacer(Modifier.width(12.dp))
-                    Column {
-                        Text(room.title, fontWeight = FontWeight.Bold, color = Color.White)
-                        Text(room.address, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.8f))
-                    }
-                }
-            }
-
             // Billing month
             SectionCard(title = "") {
                 OutlinedTextField(
@@ -97,8 +93,8 @@ fun MeterReadingScreen(roomId: Long, onNavigateBack: () -> Unit, onSaved: () -> 
                 if (elecCurr.isNotBlank()) {
                     Spacer(Modifier.height(8.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Tiêu thụ: ${elecUsage} kWh", style = MaterialTheme.typography.bodySmall, color = if (elecUsage >= 0) StatusAvailable else MaterialTheme.colorScheme.error)
-                        Text("Thành tiền: ${elecAmount.toVnd()}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, color = Primary)
+                        Text("Tiêu thụ: $elecUsage kWh", style = MaterialTheme.typography.bodySmall,
+                            color = if (elecUsage >= 0) StatusAvailable else MaterialTheme.colorScheme.error)
                     }
                 }
             }
@@ -123,10 +119,8 @@ fun MeterReadingScreen(roomId: Long, onNavigateBack: () -> Unit, onSaved: () -> 
                 }
                 if (waterCurr.isNotBlank()) {
                     Spacer(Modifier.height(8.dp))
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Tiêu thụ: ${waterUsage} m³", style = MaterialTheme.typography.bodySmall, color = if (waterUsage >= 0) StatusAvailable else MaterialTheme.colorScheme.error)
-                        Text("Thành tiền: ${waterAmount.toVnd()}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, color = Primary)
-                    }
+                    Text("Tiêu thụ: $waterUsage m³", style = MaterialTheme.typography.bodySmall,
+                        color = if (waterUsage >= 0) StatusAvailable else MaterialTheme.colorScheme.error)
                 }
             }
 
@@ -136,23 +130,39 @@ fun MeterReadingScreen(roomId: Long, onNavigateBack: () -> Unit, onSaved: () -> 
                     history.take(3).forEach { mr ->
                         Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text(mr.billingMonth, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
-                            Text("⚡${mr.electricUsage.toInt()} kWh  💧${mr.waterUsage.toInt()} m³", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("⚡${mr.electricUsage.toInt()} kWh  💧${mr.waterUsage.toInt()} m³",
+                                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         if (mr != history.take(3).last()) HorizontalDivider(color = OutlineVariant, modifier = Modifier.padding(vertical = 4.dp))
                     }
                 }
             }
 
+            if (saveState is MeterReadingUiState.Error) {
+                Text((saveState as MeterReadingUiState.Error).message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
+
             Button(
-                onClick = onSaved,
-                enabled = elecCurr.isNotBlank() && waterCurr.isNotBlank() && elecUsage >= 0 && waterUsage >= 0,
+                onClick = {
+                    viewModel.recordReading(
+                        roomId = roomId,
+                        billingMonth = billingMonth,
+                        electricPrevious = elecPrev.toDoubleOrNull() ?: 0.0,
+                        electricCurrent = elecCurr.toDoubleOrNull() ?: 0.0,
+                        waterPrevious = waterPrev.toDoubleOrNull() ?: 0.0,
+                        waterCurrent = waterCurr.toDoubleOrNull() ?: 0.0
+                    )
+                },
+                enabled = elecCurr.isNotBlank() && waterCurr.isNotBlank() && elecUsage >= 0 && waterUsage >= 0 && saveState !is MeterReadingUiState.Loading,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Primary)
             ) {
-                Text("Lưu chỉ số", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                if (saveState is MeterReadingUiState.Loading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
+                else Text("Lưu chỉ số", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
             }
             Spacer(Modifier.height(16.dp))
         }
     }
 }
+

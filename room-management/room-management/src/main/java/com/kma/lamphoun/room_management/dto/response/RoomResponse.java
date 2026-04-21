@@ -24,6 +24,7 @@ public class RoomResponse {
     private BigDecimal servicePrice;
     private RoomStatus status;
     private RoomCategory category;
+    private String imageUrl;
     private Long ownerId;
     private String ownerName;
     private LocalDateTime createdAt;

@@ -7,9 +7,11 @@ import com.kma.lamphoun.room_management.dto.request.UpdateRoomStatusRequest;
 import com.kma.lamphoun.room_management.dto.response.RoomResponse;
 import com.kma.lamphoun.room_management.entity.Room;
 import com.kma.lamphoun.room_management.entity.User;
+import com.kma.lamphoun.room_management.exception.BadRequestException;
 import com.kma.lamphoun.room_management.exception.ForbiddenException;
 import com.kma.lamphoun.room_management.exception.ResourceNotFoundException;
 import com.kma.lamphoun.room_management.mapper.RoomMapper;
+import com.kma.lamphoun.room_management.repository.ContractRepository;
 import com.kma.lamphoun.room_management.repository.RoomRepository;
 import com.kma.lamphoun.room_management.repository.UserRepository;
 import com.kma.lamphoun.room_management.service.RoomService;
@@ -27,6 +29,7 @@ public class RoomServiceImpl implements RoomService {
 
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
+    private final ContractRepository contractRepository;
     private final RoomMapper roomMapper;
     private final WebSocketEventService wsEventService;
 
@@ -95,9 +98,26 @@ public class RoomServiceImpl implements RoomService {
 
     @Override
     @Transactional
+    public RoomResponse updateImage(Long id, String ownerUsername, String imageUrl) {
+        Room room = findRoom(id);
+        checkOwnership(room, ownerUsername);
+        room.setImageUrl(imageUrl);
+        return roomMapper.toResponse(roomRepository.save(room));
+    }
+
+    @Override
+    @Transactional
     public void delete(Long id, String ownerUsername) {
         Room room = findRoom(id);
         checkOwnership(room, ownerUsername);
+
+        // Không cho xóa phòng đang có hợp đồng ACTIVE
+        if (contractRepository.existsByRoomIdAndStatus(room.getId(),
+                com.kma.lamphoun.room_management.common.enums.ContractStatus.ACTIVE)) {
+            throw new com.kma.lamphoun.room_management.exception.ConflictException(
+                    "Cannot delete room with an active contract");
+        }
+
         roomRepository.delete(room);
     }
 
