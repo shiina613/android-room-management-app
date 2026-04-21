@@ -67,7 +67,7 @@ public class DataSeeder implements CommandLineRunner {
         user("admin", pw, "admin@demo.com", "Admin Hệ Thống", "0900000000", Role.ROLE_ADMIN);
 
         // ── Rooms (15 phòng) ───────────────────────────────────
-        String BASE = "http://localhost:8080/uploads/rooms/";
+        String BASE = "/uploads/rooms/";
         Room r101 = room("Phòng 101", "15 Nguyễn Trãi, Q1, TP.HCM", 3_500_000, 3_500, 15_000, 200_000, RoomStatus.OCCUPIED,    RoomCategory.STUDIO,    "Phòng studio đầy đủ nội thất, ban công rộng", landlord, BASE + "room_studio_1.jpg");
         Room r102 = room("Phòng 102", "15 Nguyễn Trãi, Q1, TP.HCM", 3_200_000, 3_500, 15_000, 200_000, RoomStatus.AVAILABLE,   RoomCategory.STUDIO,    "Phòng mới sơn, cửa sổ hướng Đông",           landlord, BASE + "room_studio_2.jpg");
         Room r103 = room("Phòng 103", "15 Nguyễn Trãi, Q1, TP.HCM", 3_300_000, 3_500, 15_000, 200_000, RoomStatus.OCCUPIED,    RoomCategory.STUDIO,    "Phòng yên tĩnh, gần thang máy",               landlord, BASE + "room_studio_3.jpg");

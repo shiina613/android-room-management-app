@@ -1,7 +1,7 @@
 -- Chạy script này để cập nhật imageUrl cho các phòng đã có trong DB
--- Thay đổi BASE_URL nếu backend chạy ở IP khác
+-- Path tương đối — backend tự ghép base URL khi trả về
 
-SET @BASE = 'http://localhost:8080/uploads/rooms/';
+SET @BASE = '/uploads/rooms/';
 
 UPDATE rooms SET image_url = CONCAT(@BASE, 'room_studio_1.jpg')    WHERE title = 'Phòng 101';
 UPDATE rooms SET image_url = CONCAT(@BASE, 'room_studio_2.jpg')    WHERE title = 'Phòng 102';
