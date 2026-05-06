@@ -70,7 +70,11 @@ fun PaymentHistoryScreen(
                             val remaining = invoice!!.totalAmount - paid
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text("Đã TT: ${paid.toVnd()}", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.9f))
-                                Text("Còn: ${remaining.toVnd()}", style = MaterialTheme.typography.bodySmall, color = if (remaining > 0) Color(0xFFFFD54F) else Color.White)
+                                if (remaining < 0) {
+                                    Text("Thừa: ${(-remaining).toVnd()}", style = MaterialTheme.typography.bodySmall, color = Color(0xFF80CBC4))
+                                } else {
+                                    Text("Còn: ${remaining.toVnd()}", style = MaterialTheme.typography.bodySmall, color = if (remaining > 0) Color(0xFFFFD54F) else Color.White)
+                                }
                             }
                         }
                     }

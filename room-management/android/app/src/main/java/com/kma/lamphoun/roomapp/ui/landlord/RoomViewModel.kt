@@ -43,7 +43,18 @@ class RoomViewModel @Inject constructor(
     private val _selectedRoom = MutableStateFlow<RoomResponse?>(null)
     val selectedRoom: StateFlow<RoomResponse?> = _selectedRoom
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing
+
     init { loadRooms() }
+
+    fun refresh() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            loadRooms()
+            _isRefreshing.value = false
+        }
+    }
 
     fun loadRooms(status: String? = null, keyword: String? = null) {
         viewModelScope.launch {

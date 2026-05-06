@@ -16,6 +16,7 @@ import com.kma.lamphoun.room_management.exception.ResourceNotFoundException;
 import com.kma.lamphoun.room_management.repository.ContractRepository;
 import com.kma.lamphoun.room_management.repository.InvoiceRepository;
 import com.kma.lamphoun.room_management.repository.MeterReadingRepository;
+import com.kma.lamphoun.room_management.repository.PaymentRepository;
 import com.kma.lamphoun.room_management.repository.UserRepository;
 import com.kma.lamphoun.room_management.service.InvoiceService;
 import com.kma.lamphoun.room_management.websocket.WebSocketEventService;
@@ -38,6 +39,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final ContractRepository contractRepository;
     private final MeterReadingRepository meterReadingRepository;
     private final UserRepository userRepository;
+    private final PaymentRepository paymentRepository;
     private final WebSocketEventService wsEventService;
 
     @Override
@@ -93,10 +95,18 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         BigDecimal serviceAmount = room.getServicePrice();
 
-        BigDecimal totalAmount = rentAmount
+        // Tính credit từ tháng trước: tổng payments - tổng invoices của contract
+        BigDecimal totalPaidForContract = paymentRepository.sumAmountByContractId(contract.getId());
+        BigDecimal totalInvoicedForContract = invoiceRepository.sumTotalAmountByContractId(contract.getId());
+        BigDecimal creditBalance = totalPaidForContract.subtract(totalInvoicedForContract);
+        BigDecimal creditApplied = creditBalance.max(BigDecimal.ZERO); // chỉ dùng nếu dương
+
+        BigDecimal grossTotal = rentAmount
                 .add(electricAmount)
                 .add(waterAmount)
                 .add(serviceAmount);
+
+        BigDecimal totalAmount = grossTotal.subtract(creditApplied).max(BigDecimal.ZERO);
 
         // Hạn thanh toán: cuối tháng billing nếu không truyền
         LocalDate dueDate = request.getDueDate() != null
@@ -115,6 +125,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                 .waterPrice(waterPrice)
                 .waterAmount(waterAmount)
                 .serviceAmount(serviceAmount)
+                .creditApplied(creditApplied)
                 .totalAmount(totalAmount)
                 .dueDate(dueDate)
                 .note(request.getNote())
@@ -129,6 +140,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public InvoiceResponse getById(Long id, String username) {
         Invoice invoice = findInvoice(id);
         checkViewPermission(invoice, username);
@@ -136,6 +148,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<InvoiceResponse> getByLandlord(String landlordUsername, InvoiceStatus status,
                                                 Long contractId, Pageable pageable) {
         User landlord = findUser(landlordUsername);
@@ -144,6 +157,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<InvoiceResponse> getByTenant(String tenantUsername, InvoiceStatus status, Pageable pageable) {
         User tenant = findUser(tenantUsername);
         return invoiceRepository.findByTenantId(tenant.getId(), status, pageable)
@@ -151,6 +165,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<InvoiceResponse> getByContract(Long contractId, String username, Pageable pageable) {
         Contract contract = findContract(contractId);
         User user = findUser(username);
@@ -258,6 +273,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                         .serviceAmount(inv.getServiceAmount())
                         .build())
                 .totalAmount(inv.getTotalAmount())
+                .creditApplied(inv.getCreditApplied() != null && inv.getCreditApplied().compareTo(BigDecimal.ZERO) > 0 ? inv.getCreditApplied() : null)
                 .note(inv.getNote())
                 .createdAt(inv.getCreatedAt())
                 .build();

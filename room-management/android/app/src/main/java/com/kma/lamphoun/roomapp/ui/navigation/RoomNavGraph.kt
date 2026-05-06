@@ -1,8 +1,28 @@
 package com.kma.lamphoun.roomapp.ui.navigation
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -10,14 +30,20 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.kma.lamphoun.roomapp.ui.admin.AdminDashboardScreen
 import com.kma.lamphoun.roomapp.ui.auth.*
+import com.kma.lamphoun.roomapp.ui.common.NotificationBadgeViewModel
 import com.kma.lamphoun.roomapp.ui.landlord.*
 import com.kma.lamphoun.roomapp.ui.shared.ProfileScreen
 import com.kma.lamphoun.roomapp.ui.tenant.*
 
 @Composable
 fun RoomNavGraph(navController: NavHostController = rememberNavController()) {
-    NavHost(navController = navController, startDestination = NavRoutes.SPLASH) {
+    val notifBadgeViewModel: NotificationBadgeViewModel = hiltViewModel()
+    val inAppBanner by notifBadgeViewModel.inAppBanner.collectAsState()
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        NavHost(navController = navController, startDestination = NavRoutes.SPLASH) {
 
         // ── Splash ──────────────────────────────────────────────────────────
         composable(NavRoutes.SPLASH) {
@@ -25,6 +51,7 @@ fun RoomNavGraph(navController: NavHostController = rememberNavController()) {
                 val dest = when (role) {
                     "ROLE_LANDLORD" -> NavRoutes.LANDLORD_DASHBOARD
                     "ROLE_TENANT" -> NavRoutes.TENANT_DASHBOARD
+                    "ROLE_ADMIN" -> NavRoutes.ADMIN_DASHBOARD
                     else -> NavRoutes.LOGIN
                 }
                 navController.navigate(dest) { popUpTo(NavRoutes.SPLASH) { inclusive = true } }
@@ -35,7 +62,11 @@ fun RoomNavGraph(navController: NavHostController = rememberNavController()) {
         composable(NavRoutes.LOGIN) {
             LoginScreen(
                 onLoginSuccess = { role ->
-                    val dest = if (role == "ROLE_LANDLORD") NavRoutes.LANDLORD_DASHBOARD else NavRoutes.TENANT_DASHBOARD
+                    val dest = when (role) {
+                        "ROLE_LANDLORD" -> NavRoutes.LANDLORD_DASHBOARD
+                        "ROLE_ADMIN" -> NavRoutes.ADMIN_DASHBOARD
+                        else -> NavRoutes.TENANT_DASHBOARD
+                    }
                     navController.navigate(dest) { popUpTo(NavRoutes.LOGIN) { inclusive = true } }
                 },
                 onNavigateToRegister = { navController.navigate(NavRoutes.REGISTER) }
@@ -92,15 +123,29 @@ fun RoomNavGraph(navController: NavHostController = rememberNavController()) {
             arguments = listOf(navArgument("contractId") { type = NavType.LongType })
         ) { backStack ->
             val contractId = backStack.arguments?.getLong("contractId") ?: return@composable
-            // Reuse ContractFormScreen for detail/edit — or create ContractDetailScreen later
-            ContractFormScreen(onNavigateBack = { navController.popBackStack() }, onSaved = { navController.popBackStack() })
+            ContractDetailScreen(
+                contractId = contractId,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToInvoice = { navController.navigate(NavRoutes.invoiceDetail(it)) }
+            )
         }
         composable(
             NavRoutes.METER_READING,
             arguments = listOf(navArgument("roomId") { type = NavType.LongType })
         ) { backStack ->
             val roomId = backStack.arguments?.getLong("roomId") ?: 1L
-            MeterReadingScreen(roomId = roomId, onNavigateBack = { navController.popBackStack() }, onSaved = { navController.popBackStack() })
+            MeterReadingScreen(
+                roomId = roomId,
+                onNavigateBack = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() },
+                onCreateInvoice = { meterReadingId, rid ->
+                    // Pass roomId in the contractId slot; InvoiceFormScreen will call
+                    // preloadFromMeterReading(roomId, meterReadingId) to resolve the contract
+                    navController.navigate(NavRoutes.invoiceCreateFromMeter(rid, meterReadingId)) {
+                        popUpTo(NavRoutes.meterReading(roomId)) { inclusive = true }
+                    }
+                }
+            )
         }
         composable(NavRoutes.INVOICE_LIST) {
             InvoiceListScreen(
@@ -110,11 +155,27 @@ fun RoomNavGraph(navController: NavHostController = rememberNavController()) {
             )
         }
         composable(NavRoutes.INVOICE_CREATE) {
-            // Reuse InvoiceListScreen FAB flow — placeholder
-            InvoiceListScreen(
+            InvoiceFormScreen(
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToCreate = {},
-                onNavigateToDetail = { navController.navigate(NavRoutes.invoiceDetail(it)) }
+                onSaved = { navController.popBackStack() }
+            )
+        }
+        composable(
+            NavRoutes.INVOICE_CREATE_FROM_METER,
+            arguments = listOf(
+                navArgument("contractId") { type = NavType.LongType },
+                navArgument("meterReadingId") { type = NavType.LongType }
+            )
+        ) { backStack ->
+            val contractId = backStack.arguments?.getLong("contractId") ?: return@composable
+            val meterReadingId = backStack.arguments?.getLong("meterReadingId") ?: return@composable
+            // contractId here actually carries roomId (passed from MeterReadingScreen via onCreateInvoice)
+            // InvoiceFormScreen will call preloadFromMeterReading(roomId, meterReadingId) to resolve the contract
+            InvoiceFormScreen(
+                prefilledContractId = contractId,
+                prefilledMeterReadingId = meterReadingId,
+                onNavigateBack = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() }
             )
         }
         composable(
@@ -188,6 +249,60 @@ fun RoomNavGraph(navController: NavHostController = rememberNavController()) {
         }
         composable(NavRoutes.TENANT_NOTIFICATIONS) {
             TenantNotificationScreen(onNavigateBack = { navController.popBackStack() })
+        }
+
+        // ── Admin ────────────────────────────────────────────────────────────
+        composable(NavRoutes.ADMIN_DASHBOARD) {
+            AdminDashboardScreen(
+                onNotificationClick = { navController.navigate(NavRoutes.NOTIFICATIONS) },
+                onProfileClick = { navController.navigate(NavRoutes.PROFILE) }
+            )
+        }
+    }
+
+        // In-app notification banner
+        inAppBanner?.let { payload ->
+            InAppNotificationBanner(
+                event = payload.event,
+                onDismiss = { notifBadgeViewModel.clearBanner() },
+                modifier = Modifier.align(Alignment.TopCenter)
+            )
+        }
+    }
+}
+
+@Composable
+private fun InAppNotificationBanner(
+    event: String,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clickable(onClick = onDismiss),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Default.Notifications,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = "Thông báo mới: $event",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.weight(1f)
+            )
         }
     }
 }

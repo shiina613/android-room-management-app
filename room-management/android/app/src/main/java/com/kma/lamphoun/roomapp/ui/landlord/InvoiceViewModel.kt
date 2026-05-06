@@ -37,7 +37,18 @@ class InvoiceViewModel @Inject constructor(
     private val _markPaidState = MutableStateFlow<Boolean>(false)
     val markPaidState: StateFlow<Boolean> = _markPaidState
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing
+
     init { loadInvoices() }
+
+    fun refresh() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            loadInvoices()
+            _isRefreshing.value = false
+        }
+    }
 
     fun loadInvoices(status: String? = null) {
         viewModelScope.launch {

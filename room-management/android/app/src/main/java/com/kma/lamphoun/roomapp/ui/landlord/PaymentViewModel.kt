@@ -66,7 +66,17 @@ class PaymentViewModel @Inject constructor(
                     _saveState.value = PaymentUiState.Success
                     loadInvoiceAndPayments(invoiceId)
                 } else {
-                    _saveState.value = PaymentUiState.Error(response.body()?.message ?: "Thanh toán thất bại")
+                    // Với 4xx, body() là null — cần đọc errorBody()
+                    val errorMsg = response.body()?.message
+                        ?: runCatching {
+                            val json = response.errorBody()?.string()
+                            // Parse message từ {"success":false,"message":"...","data":null}
+                            json?.let {
+                                org.json.JSONObject(it).optString("message", "Thanh toán thất bại")
+                            }
+                        }.getOrNull()
+                        ?: "Thanh toán thất bại"
+                    _saveState.value = PaymentUiState.Error(errorMsg)
                 }
             } catch (e: Exception) {
                 _saveState.value = PaymentUiState.Error("Lỗi kết nối")

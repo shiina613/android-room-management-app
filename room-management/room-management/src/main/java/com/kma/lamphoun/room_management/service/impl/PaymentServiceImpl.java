@@ -15,6 +15,7 @@ import com.kma.lamphoun.room_management.repository.InvoiceRepository;
 import com.kma.lamphoun.room_management.repository.PaymentRepository;
 import com.kma.lamphoun.room_management.repository.UserRepository;
 import com.kma.lamphoun.room_management.service.PaymentService;
+import com.kma.lamphoun.room_management.websocket.WebSocketEventService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,6 +32,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final InvoiceRepository invoiceRepository;
     private final UserRepository userRepository;
+    private final WebSocketEventService wsEventService;
 
     @Override
     @Transactional
@@ -48,14 +50,9 @@ public class PaymentServiceImpl implements PaymentService {
             throw new BadRequestException("Invoice is already fully paid");
         }
 
-        // Số tiền không được vượt quá số còn lại
-        BigDecimal alreadyPaid = paymentRepository.sumAmountByInvoiceId(invoice.getId());
-        BigDecimal remaining = invoice.getTotalAmount().subtract(alreadyPaid);
-
-        if (request.getAmount().compareTo(remaining) > 0) {
-            throw new BadRequestException(
-                    "Payment amount (" + request.getAmount()
-                    + ") exceeds remaining balance (" + remaining + ")");
+        // Số tiền phải > 0
+        if (request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BadRequestException("Payment amount must be greater than 0");
         }
 
         Payment payment = Payment.builder()
@@ -70,7 +67,8 @@ public class PaymentServiceImpl implements PaymentService {
         paymentRepository.save(payment);
 
         // Tính lại tổng đã trả sau khi lưu payment mới
-        BigDecimal newTotalPaid = alreadyPaid.add(request.getAmount());
+        BigDecimal alreadyPaid = paymentRepository.sumAmountByInvoiceId(invoice.getId());
+        BigDecimal newTotalPaid = alreadyPaid; // đã bao gồm payment vừa lưu
         BigDecimal newRemaining = invoice.getTotalAmount().subtract(newTotalPaid);
 
         // Tự động chuyển PAID khi đủ tiền
@@ -80,10 +78,17 @@ public class PaymentServiceImpl implements PaymentService {
             invoiceRepository.save(invoice);
         }
 
-        return toResponse(payment, invoice, newTotalPaid, newRemaining);
+        PaymentResponse response = toResponse(payment, invoice, newTotalPaid, newRemaining);
+
+        // Push realtime đến tenant
+        Contract contract = invoice.getContract();
+        wsEventService.pushPaymentReceived(contract.getTenant().getUsername(), response);
+
+        return response;
     }
 
     @Override
+    @Transactional(readOnly = true)
     public PaymentResponse getById(Long id, String username) {
         Payment payment = findPayment(id);
         checkViewPermission(payment, username);
@@ -93,6 +98,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<PaymentResponse> getByInvoice(Long invoiceId, String username, Pageable pageable) {
         Invoice invoice = findInvoice(invoiceId);
         User user = findUser(username);
@@ -111,6 +117,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<PaymentResponse> getByTenant(String tenantUsername, Pageable pageable) {
         User tenant = findUser(tenantUsername);
         return paymentRepository.findByTenantId(tenant.getId(), pageable)
@@ -122,6 +129,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<PaymentResponse> getByLandlord(String landlordUsername, Pageable pageable) {
         User landlord = findUser(landlordUsername);
         return paymentRepository.findByLandlordId(landlord.getId(), pageable)
@@ -180,7 +188,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .note(p.getNote())
                 .recordedBy(p.getRecordedBy().getUsername())
                 .totalPaid(totalPaid)
-                .remaining(remaining.max(BigDecimal.ZERO))
+                .remaining(remaining)
                 .createdAt(p.getCreatedAt())
                 .build();
     }

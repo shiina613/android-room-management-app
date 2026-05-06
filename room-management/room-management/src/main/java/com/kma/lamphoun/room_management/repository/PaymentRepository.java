@@ -15,6 +15,10 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.invoice.id = :invoiceId")
     BigDecimal sumAmountByInvoiceId(@Param("invoiceId") Long invoiceId);
 
+    /** Tổng tiền đã thanh toán cho tất cả invoice của một contract */
+    @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.invoice.contract.id = :contractId")
+    BigDecimal sumAmountByContractId(@Param("contractId") Long contractId);
+
     /** Danh sách payment theo invoice */
     Page<Payment> findByInvoiceIdOrderByPaidAtDesc(Long invoiceId, Pageable pageable);
 

@@ -58,5 +58,9 @@ dependencies {
     implementation(libs.datastore.preferences)
     implementation(libs.coroutines.android)
     implementation(libs.coil.compose)
+    implementation("org.java-websocket:Java-WebSocket:1.5.4")
+    implementation("com.github.NaikSoftware:StompProtocolAndroid:1.6.6")
+    implementation("io.reactivex.rxjava2:rxjava:2.2.21")
+    implementation("io.reactivex.rxjava2:rxandroid:2.1.1")
     debugImplementation(libs.androidx.ui.tooling)
 }

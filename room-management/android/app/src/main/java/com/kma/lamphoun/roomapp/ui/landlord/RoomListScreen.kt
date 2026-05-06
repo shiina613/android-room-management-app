@@ -11,6 +11,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,6 +26,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.kma.lamphoun.roomapp.data.remote.dto.RoomResponse
 import com.kma.lamphoun.roomapp.ui.common.*
 import com.kma.lamphoun.roomapp.ui.theme.*
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RoomListScreen(
     onNavigateBack: () -> Unit,
@@ -33,6 +36,8 @@ fun RoomListScreen(
     viewModel: RoomViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.listState.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
+    val pullRefreshState = rememberPullToRefreshState()
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("Tất cả") }
     val filters = listOf("Tất cả", "Trống", "Đang thuê", "Bảo trì")
@@ -66,8 +71,14 @@ fun RoomListScreen(
             ) { Icon(Icons.Default.Add, contentDescription = "Thêm phòng") }
         }
     ) { padding ->
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = { viewModel.refresh() },
+            state = pullRefreshState,
+            modifier = Modifier.padding(padding)
+        ) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -155,6 +166,7 @@ fun RoomListScreen(
                 }
             }
             item { Spacer(Modifier.height(80.dp)) }
+        }
         }
     }
 }

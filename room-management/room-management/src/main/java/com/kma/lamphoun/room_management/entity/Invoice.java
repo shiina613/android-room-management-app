@@ -70,9 +70,14 @@ public class Invoice {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal serviceAmount;
 
-    /** Tổng cộng = rent + electric + water + service */
+    /** Tổng cộng = rent + electric + water + service - creditApplied */
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal totalAmount;
+
+    /** Tiền thừa từ tháng trước được áp dụng vào hóa đơn này */
+    @Column(precision = 12, scale = 2)
+    @Builder.Default
+    private BigDecimal creditApplied = BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

@@ -28,29 +28,76 @@ fun MeterReadingScreen(
     roomId: Long,
     onNavigateBack: () -> Unit,
     onSaved: () -> Unit,
+    onCreateInvoice: (meterReadingId: Long, roomId: Long) -> Unit,
     viewModel: MeterReadingViewModel = hiltViewModel()
 ) {
     val saveState by viewModel.saveState.collectAsState()
     val history by viewModel.history.collectAsState()
     val latestReading by viewModel.latestReading.collectAsState()
+    val savedReading by viewModel.savedReading.collectAsState()
+
+    var showInvoiceDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(roomId) { viewModel.loadHistory(roomId) }
     LaunchedEffect(saveState) {
         if (saveState is MeterReadingUiState.Success) {
-            viewModel.resetState()
-            onSaved()
+            showInvoiceDialog = true
         }
     }
 
     val currentMonth = YearMonth.now().toString()
     var billingMonth by remember { mutableStateOf(currentMonth) }
-    var elecPrev by remember(latestReading) { mutableStateOf(latestReading?.electricCurrent?.toLong()?.toString() ?: "0") }
+    // Dùng null để phân biệt "chưa load" vs "đã load, giá trị = 0"
+    var elecPrevLoaded by remember { mutableStateOf(false) }
+    var elecPrev by remember { mutableStateOf("") }
     var elecCurr by remember { mutableStateOf("") }
-    var waterPrev by remember(latestReading) { mutableStateOf(latestReading?.waterCurrent?.toLong()?.toString() ?: "0") }
+    var waterPrevLoaded by remember { mutableStateOf(false) }
+    var waterPrev by remember { mutableStateOf("") }
     var waterCurr by remember { mutableStateOf("") }
 
-    val elecUsage = (elecCurr.toLongOrNull() ?: 0) - (elecPrev.toLongOrNull() ?: 0)
-    val waterUsage = (waterCurr.toLongOrNull() ?: 0) - (waterPrev.toLongOrNull() ?: 0)
+    // Điền sẵn chỉ số đầu kỳ từ kỳ gần nhất — chỉ set một lần khi data về
+    LaunchedEffect(latestReading) {
+        if (latestReading != null) {
+            elecPrev = latestReading!!.electricCurrent.toLong().toString()
+            elecPrevLoaded = true
+            waterPrev = latestReading!!.waterCurrent.toLong().toString()
+            waterPrevLoaded = true
+        }
+    }
+
+    val elecUsage = if (elecPrevLoaded || elecPrev.isNotBlank())
+        (elecCurr.toLongOrNull() ?: 0) - (elecPrev.toLongOrNull() ?: 0)
+    else 0L
+    val waterUsage = if (waterPrevLoaded || waterPrev.isNotBlank())
+        (waterCurr.toLongOrNull() ?: 0) - (waterPrev.toLongOrNull() ?: 0)
+    else 0L
+
+    if (showInvoiceDialog && savedReading != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showInvoiceDialog = false
+                viewModel.resetState()
+                onSaved()
+            },
+            title = { Text("Tạo hóa đơn ngay?") },
+            text = { Text("Chỉ số tháng ${savedReading!!.billingMonth} đã lưu. Bạn có muốn tạo hóa đơn ngay không?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    val reading = savedReading ?: return@TextButton
+                    showInvoiceDialog = false
+                    viewModel.resetState()
+                    onCreateInvoice(reading.id, roomId)
+                }) { Text("Tạo hóa đơn") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showInvoiceDialog = false
+                    viewModel.resetState()
+                    onSaved()
+                }) { Text("Để sau") }
+            }
+        )
+    }
 
     Scaffold(
         containerColor = SurfaceContainerLow,
@@ -76,8 +123,9 @@ fun MeterReadingScreen(
             SectionCard(title = "⚡ Điện") {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(
-                        value = elecPrev, onValueChange = { elecPrev = it },
+                        value = elecPrev, onValueChange = { elecPrev = it; elecPrevLoaded = true },
                         label = { Text("Chỉ số đầu (kWh)") },
+                        placeholder = { Text(if (!elecPrevLoaded && history.isEmpty()) "..." else "") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Primary, focusedLabelColor = Primary)
@@ -103,8 +151,9 @@ fun MeterReadingScreen(
             SectionCard(title = "💧 Nước") {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(
-                        value = waterPrev, onValueChange = { waterPrev = it },
+                        value = waterPrev, onValueChange = { waterPrev = it; waterPrevLoaded = true },
                         label = { Text("Chỉ số đầu (m³)") },
+                        placeholder = { Text(if (!waterPrevLoaded && history.isEmpty()) "..." else "") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Primary, focusedLabelColor = Primary)

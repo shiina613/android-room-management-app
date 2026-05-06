@@ -23,8 +23,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kma.lamphoun.roomapp.data.remote.dto.DashboardResponse
+import com.kma.lamphoun.roomapp.data.remote.dto.NotificationResponse
+import com.kma.lamphoun.roomapp.ui.common.NotificationBadgeViewModel
 import com.kma.lamphoun.roomapp.ui.common.toVnd
 import com.kma.lamphoun.roomapp.ui.theme.*
+
+private fun String.toRelativeTime(): String {
+    return try {
+        val formatter = java.time.format.DateTimeFormatter.ISO_DATE_TIME
+        val dateTime = java.time.LocalDateTime.parse(this, formatter)
+        val now = java.time.LocalDateTime.now()
+        val minutes = java.time.Duration.between(dateTime, now).toMinutes()
+        when {
+            minutes < 60 -> "${minutes} phút trước"
+            minutes < 1440 -> "${minutes / 60} giờ trước"
+            else -> "${minutes / 1440} ngày trước"
+        }
+    } catch (e: Exception) {
+        this
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,9 +53,11 @@ fun DashboardScreen(
     onNavigateToReports: () -> Unit,
     onNavigateToNotifications: () -> Unit,
     onNavigateToProfile: () -> Unit,
-    viewModel: DashboardViewModel = hiltViewModel()
+    viewModel: DashboardViewModel = hiltViewModel(),
+    notifBadgeViewModel: NotificationBadgeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val unreadCount by notifBadgeViewModel.unreadCount.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
 
     Scaffold(
@@ -64,7 +84,15 @@ fun DashboardScreen(
                 },
                 actions = {
                     IconButton(onClick = onNavigateToNotifications) {
-                        Icon(Icons.Outlined.Notifications, contentDescription = "Thông báo", tint = OnSurfaceVariant)
+                        BadgedBox(badge = {
+                            if (unreadCount > 0) {
+                                Badge(containerColor = MaterialTheme.colorScheme.error) {
+                                    Text("$unreadCount")
+                                }
+                            }
+                        }) {
+                            Icon(Icons.Outlined.Notifications, contentDescription = "Thông báo", tint = OnSurfaceVariant)
+                        }
                     }
                     IconButton(onClick = onNavigateToProfile) {
                         Box(
@@ -165,7 +193,13 @@ fun DashboardScreen(
 
             // Recent activity
             if (uiState is DashboardUiState.Success) {
-                RecentActivitySection(uiState as DashboardUiState.Success)
+                val successState = uiState as DashboardUiState.Success
+                RecentActivitySection(
+                    state = successState,
+                    recentActivities = successState.recentActivities,
+                    onNavigateToContracts = onNavigateToContracts,
+                    onNavigateToInvoices = onNavigateToInvoices
+                )
             }
 
             Spacer(Modifier.height(80.dp))
@@ -301,30 +335,111 @@ private fun ShortcutsSection(onRooms: () -> Unit, onContracts: () -> Unit, onInv
 }
 
 @Composable
-private fun RecentActivitySection(state: DashboardUiState.Success) {
+private fun RecentActivitySection(
+    state: DashboardUiState.Success,
+    recentActivities: List<NotificationResponse>,
+    onNavigateToContracts: () -> Unit,
+    onNavigateToInvoices: () -> Unit
+) {
     val data = state.data
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Tổng quan nhanh", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = OnBackground)
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = SurfaceContainerLowest),
-            elevation = CardDefaults.cardElevation(0.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                ActivityRow("Hợp đồng đang hiệu lực", "${data.activeContracts}", Icons.Filled.Description, Primary)
-                ActivityRow("Hợp đồng sắp hết hạn (30 ngày)", "${data.expiringIn30Days}", Icons.Filled.Warning, Tertiary)
-                ActivityRow("Hóa đơn quá hạn", "${data.overdueInvoices}", Icons.Filled.Error, StatusOverdue)
-                ActivityRow("Tổng người thuê", "${data.totalTenants}", Icons.Filled.People, Secondary)
+        if (recentActivities.isNotEmpty()) {
+            // Dynamic notifications section
+            Text("Hoạt động gần đây", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = OnBackground)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = SurfaceContainerLowest),
+                elevation = CardDefaults.cardElevation(0.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    recentActivities.take(5).forEach { notif ->
+                        NotificationActivityRow(notif)
+                    }
+                }
+            }
+        } else {
+            // Static summary fallback
+            Text("Tổng quan nhanh", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = OnBackground)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = SurfaceContainerLowest),
+                elevation = CardDefaults.cardElevation(0.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    ActivityRow("Hợp đồng đang hiệu lực", "${data.activeContracts}", Icons.Filled.Description, Primary)
+                    ActivityRow(
+                        "Hợp đồng sắp hết hạn (30 ngày)", "${data.expiringIn30Days}",
+                        Icons.Filled.Warning, Tertiary,
+                        onClick = if (data.expiringIn30Days > 0) onNavigateToContracts else null
+                    )
+                    ActivityRow(
+                        "Hóa đơn quá hạn", "${data.overdueInvoices}",
+                        Icons.Filled.Error, StatusOverdue,
+                        onClick = if (data.overdueInvoices > 0) onNavigateToInvoices else null
+                    )
+                    ActivityRow("Tổng người thuê", "${data.totalTenants}", Icons.Filled.People, Secondary)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun ActivityRow(label: String, value: String, icon: ImageVector, color: Color) {
+private fun NotificationActivityRow(notif: NotificationResponse) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Top
+    ) {
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(CircleShape)
+                .background(Primary.copy(alpha = 0.1f)),
+            contentAlignment = Alignment.Center
+        ) { Icon(Icons.Filled.Notifications, null, tint = Primary, modifier = Modifier.size(16.dp)) }
+        Spacer(Modifier.width(10.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                notif.title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = OnSurface
+            )
+            Text(
+                notif.content,
+                style = MaterialTheme.typography.bodySmall,
+                color = OnSurfaceVariant,
+                maxLines = 2
+            )
+        }
+        Spacer(Modifier.width(8.dp))
+        Text(
+            notif.createdAt.toRelativeTime(),
+            style = MaterialTheme.typography.labelSmall,
+            color = OnSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun ActivityRow(
+    label: String,
+    value: String,
+    icon: ImageVector,
+    color: Color,
+    onClick: (() -> Unit)? = null
+) {
+    val isClickable = onClick != null && value != "0"
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (isClickable) Modifier.clickable { onClick!!() } else Modifier)
+            .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -339,7 +454,13 @@ private fun ActivityRow(label: String, value: String, icon: ImageVector, color: 
             Spacer(Modifier.width(10.dp))
             Text(label, style = MaterialTheme.typography.bodyMedium, color = OnSurface)
         }
-        Text(value, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = color)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(value, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = color)
+            if (isClickable) {
+                Spacer(Modifier.width(4.dp))
+                Icon(Icons.Default.ChevronRight, null, tint = color, modifier = Modifier.size(16.dp))
+            }
+        }
     }
 }
 

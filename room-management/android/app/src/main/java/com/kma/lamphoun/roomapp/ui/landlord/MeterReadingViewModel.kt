@@ -26,6 +26,9 @@ class MeterReadingViewModel @Inject constructor(
     private val _saveState = MutableStateFlow<MeterReadingUiState>(MeterReadingUiState.Idle)
     val saveState: StateFlow<MeterReadingUiState> = _saveState
 
+    private val _savedReading = MutableStateFlow<MeterReadingResponse?>(null)
+    val savedReading: StateFlow<MeterReadingResponse?> = _savedReading
+
     private val _history = MutableStateFlow<List<MeterReadingResponse>>(emptyList())
     val history: StateFlow<List<MeterReadingResponse>> = _history
 
@@ -62,6 +65,7 @@ class MeterReadingViewModel @Inject constructor(
                     )
                 )
                 if (response.isSuccessful && response.body()?.success == true) {
+                    _savedReading.value = response.body()!!.data!!
                     _saveState.value = MeterReadingUiState.Success(response.body()!!.data!!)
                     loadHistory(roomId)
                 } else {
@@ -73,6 +77,9 @@ class MeterReadingViewModel @Inject constructor(
         }
     }
 
-    fun resetState() { _saveState.value = MeterReadingUiState.Idle }
+    fun resetState() {
+        _saveState.value = MeterReadingUiState.Idle
+        _savedReading.value = null
+    }
 }
 

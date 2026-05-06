@@ -53,6 +53,10 @@ public interface ContractRepository extends JpaRepository<Contract, Long> {
                           @Param("roomId") Long roomId,
                           Pageable pageable);
 
+    /** Tìm hợp đồng theo id, JOIN FETCH tất cả associations để tránh LazyInitializationException */
+    @Query("SELECT c FROM Contract c JOIN FETCH c.room r JOIN FETCH r.owner JOIN FETCH c.tenant JOIN FETCH c.landlord WHERE c.id = :id")
+    Optional<Contract> findByIdWithAssociations(@Param("id") Long id);
+
     /** Tìm hợp đồng ACTIVE đã quá end_date (dùng cho scheduled job) */
     List<Contract> findByStatusAndEndDateBefore(ContractStatus status, LocalDate date);
 }

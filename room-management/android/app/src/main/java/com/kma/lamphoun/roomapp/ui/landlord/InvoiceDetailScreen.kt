@@ -28,7 +28,15 @@ fun InvoiceDetailScreen(
 ) {
     val detailState by viewModel.detailState.collectAsState()
 
-    LaunchedEffect(invoiceId) { viewModel.loadInvoice(invoiceId) }
+    // Reload mỗi khi màn hình được resume (navigate back từ payment)
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.lifecycle.currentStateFlow.collect { state ->
+            if (state == androidx.lifecycle.Lifecycle.State.RESUMED) {
+                viewModel.loadInvoice(invoiceId)
+            }
+        }
+    }
 
     Scaffold(
         containerColor = SurfaceContainerLow,
@@ -78,6 +86,25 @@ fun InvoiceDetailScreen(
                             BreakdownRow("Tiền nước (${b.waterUsage.toInt()} m³)", b.waterAmount)
                             HorizontalDivider(color = OutlineVariant, modifier = Modifier.padding(vertical = 8.dp))
                             BreakdownRow("Phí dịch vụ", b.serviceAmount)
+                            if ((invoice.creditApplied ?: 0.0) > 0) {
+                                HorizontalDivider(color = OutlineVariant, modifier = Modifier.padding(vertical = 8.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        "Tiền thừa tháng trước",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = StatusAvailable
+                                    )
+                                    Text(
+                                        "- ${invoice.creditApplied!!.toVnd()}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium,
+                                        color = StatusAvailable
+                                    )
+                                }
+                            }
                             HorizontalDivider(color = OutlineVariant, modifier = Modifier.padding(vertical = 8.dp))
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text("Tổng cộng", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)

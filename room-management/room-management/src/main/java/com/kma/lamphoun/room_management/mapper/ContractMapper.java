@@ -17,7 +17,11 @@ public class ContractMapper {
                 .tenantName(c.getTenant().getFullName())
                 .tenantPhone(c.getTenant().getPhone())
                 .landlordId(c.getLandlord().getId())
-                .landlordName(c.getLandlord().getFullName())
+                .landlordName(
+                    c.getLandlord().getFullName() != null && !c.getLandlord().getFullName().isBlank()
+                        ? c.getLandlord().getFullName()
+                        : "Chủ trọ #" + c.getLandlord().getId()
+                )
                 .startDate(c.getStartDate())
                 .endDate(c.getEndDate())
                 .deposit(c.getDeposit())

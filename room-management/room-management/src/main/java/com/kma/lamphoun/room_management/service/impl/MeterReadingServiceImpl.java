@@ -98,6 +98,7 @@ public class MeterReadingServiceImpl implements MeterReadingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public MeterReadingResponse getById(Long id) {
         MeterReading reading = meterReadingRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Meter reading not found with id: " + id));
@@ -105,6 +106,7 @@ public class MeterReadingServiceImpl implements MeterReadingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<MeterReadingResponse> getHistoryByRoom(Long roomId, Pageable pageable) {
         findRoom(roomId); // validate room exists
         return meterReadingRepository
@@ -113,6 +115,7 @@ public class MeterReadingServiceImpl implements MeterReadingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<MeterReadingResponse> getHistoryByRoomAndYear(Long roomId, int year, Pageable pageable) {
         findRoom(roomId);
         return meterReadingRepository
@@ -121,6 +124,7 @@ public class MeterReadingServiceImpl implements MeterReadingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public MeterReadingResponse getByRoomAndMonth(Long roomId, String billingMonth) {
         parseBillingMonth(billingMonth); // validate format
         MeterReading reading = meterReadingRepository

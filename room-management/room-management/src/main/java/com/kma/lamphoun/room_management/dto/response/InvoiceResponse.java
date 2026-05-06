@@ -35,6 +35,7 @@ public class InvoiceResponse {
     private Breakdown breakdown;
 
     private BigDecimal totalAmount;
+    private BigDecimal creditApplied;   // Tiền thừa từ tháng trước được trừ vào hóa đơn này
     private String note;
     private LocalDateTime createdAt;
 

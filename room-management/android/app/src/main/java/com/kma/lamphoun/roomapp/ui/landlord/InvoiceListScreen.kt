@@ -10,6 +10,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,6 +26,7 @@ import com.kma.lamphoun.roomapp.data.remote.dto.InvoiceResponse
 import com.kma.lamphoun.roomapp.ui.common.*
 import com.kma.lamphoun.roomapp.ui.theme.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InvoiceListScreen(
     onNavigateBack: () -> Unit,
@@ -32,8 +35,20 @@ fun InvoiceListScreen(
     viewModel: InvoiceViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.listState.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
+    val pullRefreshState = rememberPullToRefreshState()
     var selectedFilter by remember { mutableStateOf("Tất cả") }
     val filters = listOf("Tất cả", "Chưa TT", "Đã TT", "Quá hạn")
+
+    // Reload khi màn hình được resume (navigate back từ detail/payment)
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.lifecycle.currentStateFlow.collect { state ->
+            if (state == androidx.lifecycle.Lifecycle.State.RESUMED) {
+                viewModel.loadInvoices()
+            }
+        }
+    }
 
     val invoices = when (val s = uiState) {
         is InvoiceListUiState.Success -> s.invoices
@@ -65,8 +80,14 @@ fun InvoiceListScreen(
             ) { Icon(Icons.Default.Add, contentDescription = "Tạo hóa đơn") }
         }
     ) { padding ->
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = { viewModel.refresh() },
+            state = pullRefreshState,
+            modifier = Modifier.padding(padding)
+        ) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -138,6 +159,7 @@ fun InvoiceListScreen(
             }
             item { Spacer(Modifier.height(80.dp)) }
         }
+        }
     }
 }
 
@@ -170,7 +192,8 @@ fun InvoiceCard(invoice: InvoiceResponse, onClick: () -> Unit) {
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text("Tháng ${invoice.billingMonth}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = OnBackground)
-                Text("Hợp đồng #${invoice.contractId}", style = MaterialTheme.typography.bodySmall, color = OnSurfaceVariant)
+                Text(invoice.roomTitle ?: "Phòng #${invoice.roomId}", style = MaterialTheme.typography.bodySmall, color = OnSurfaceVariant)
+                Text(invoice.tenantName ?: "Người thuê #${invoice.tenantId}", style = MaterialTheme.typography.bodySmall, color = OnSurfaceVariant)
                 if (invoice.dueDate != null) {
                     Text("Hạn: ${invoice.dueDate}", style = MaterialTheme.typography.bodySmall, color = OnSurfaceVariant)
                 }

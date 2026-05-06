@@ -59,7 +59,7 @@ fun MyContractScreen(
                 SectionCard(title = "Chi tiết hợp đồng") {
                     InfoRow("Phòng", contract!!.roomTitle ?: "—")
                     Spacer(Modifier.height(8.dp))
-                    InfoRow("Chủ trọ", contract!!.landlordId.toString())
+                    InfoRow("Chủ trọ", contract!!.landlordName ?: "Chủ trọ #${contract!!.landlordId}")
                     Spacer(Modifier.height(8.dp))
                     HorizontalDivider(color = OutlineVariant)
                     Spacer(Modifier.height(8.dp))

@@ -13,6 +13,7 @@ data class InvoiceResponse(
     val landlordName: String?,
     val billingMonth: String,
     val totalAmount: Double,
+    val creditApplied: Double?,
     val status: String,
     val dueDate: String?,
     val paidAt: String?,

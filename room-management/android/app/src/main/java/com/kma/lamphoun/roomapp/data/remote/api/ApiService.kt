@@ -104,6 +104,9 @@ interface ApiService {
     @GET("api/meter-readings/rooms/{roomId}")
     suspend fun getMeterReadingHistory(@Path("roomId") roomId: Long, @Query("page") page: Int = 0): Response<ApiResponse<PageResponse<MeterReadingResponse>>>
 
+    @GET("api/meter-readings/{id}")
+    suspend fun getMeterReadingById(@Path("id") id: Long): Response<ApiResponse<MeterReadingResponse>>
+
     @GET("api/meter-readings/rooms/{roomId}/month/{billingMonth}")
     suspend fun getMeterReadingByMonth(@Path("roomId") roomId: Long, @Path("billingMonth") billingMonth: String): Response<ApiResponse<MeterReadingResponse>>
 

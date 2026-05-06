@@ -22,8 +22,12 @@ object NavRoutes {
     const val INVOICE_LIST = "landlord/invoices"
     const val INVOICE_DETAIL = "landlord/invoices/{invoiceId}"
     const val INVOICE_CREATE = "landlord/invoices/create"
+    const val INVOICE_CREATE_FROM_METER = "landlord/invoices/create/{contractId}/{meterReadingId}"
     const val PAYMENT_CREATE = "landlord/payments/create/{invoiceId}"
     const val REPORT = "landlord/reports"
+
+    // Admin
+    const val ADMIN_DASHBOARD = "admin/dashboard"
 
     // Tenant
     const val TENANT_DASHBOARD = "tenant/dashboard"
@@ -43,6 +47,8 @@ object NavRoutes {
     fun contractDetail(contractId: Long) = "landlord/contracts/$contractId"
     fun meterReading(roomId: Long) = "landlord/meter-readings/$roomId"
     fun invoiceDetail(invoiceId: Long) = "landlord/invoices/$invoiceId"
+    fun invoiceCreateFromMeter(contractId: Long, meterReadingId: Long) =
+        "landlord/invoices/create/$contractId/$meterReadingId"
     fun paymentCreate(invoiceId: Long) = "landlord/payments/create/$invoiceId"
     fun tenantInvoiceDetail(invoiceId: Long) = "tenant/invoices/$invoiceId"
 }

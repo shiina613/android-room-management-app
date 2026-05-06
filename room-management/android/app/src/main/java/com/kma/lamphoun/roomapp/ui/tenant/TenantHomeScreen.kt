@@ -1,5 +1,7 @@
 package com.kma.lamphoun.roomapp.ui.tenant
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -15,11 +17,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kma.lamphoun.roomapp.ui.common.*
+import com.kma.lamphoun.roomapp.ui.common.NotificationBadgeViewModel
 import com.kma.lamphoun.roomapp.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,13 +34,20 @@ fun TenantHomeScreen(
     onNavigateToMyInvoices: () -> Unit,
     onNavigateToNotifications: () -> Unit,
     onNavigateToProfile: () -> Unit,
-    viewModel: TenantViewModel = hiltViewModel()
+    viewModel: TenantViewModel = hiltViewModel(),
+    notifBadgeViewModel: NotificationBadgeViewModel = hiltViewModel()
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val activeContract by viewModel.activeContract.collectAsState()
     val latestInvoice by viewModel.latestInvoice.collectAsState()
     val notifications by viewModel.notifications.collectAsState()
-    val unreadCount by viewModel.unreadCount.collectAsState()
+    val unreadCount by notifBadgeViewModel.unreadCount.collectAsState()
+    val context = LocalContext.current
+
+    fun callLandlord(phone: String) {
+        val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone"))
+        context.startActivity(intent)
+    }
 
     Scaffold(
         containerColor = SurfaceContainerLow,
@@ -158,9 +169,20 @@ fun TenantHomeScreen(
                         Text("Cần hỗ trợ?", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = Color.White)
                         Text("Liên hệ chủ trọ ngay nếu có vấn đề", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.8f))
                     }
-                    Button(onClick = {}, colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                        shape = RoundedCornerShape(8.dp), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)) {
-                        Text("Liên hệ", color = Secondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    val landlordPhone = activeContract?.landlordPhone
+                    Button(
+                        onClick = { landlordPhone?.let { if (it.isNotBlank()) callLandlord(it) } },
+                        enabled = !landlordPhone.isNullOrBlank(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            if (landlordPhone.isNullOrBlank()) "Không có SĐT" else "Liên hệ",
+                            color = Secondary,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
                 }
             }

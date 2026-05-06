@@ -1,16 +1,19 @@
 package com.kma.lamphoun.roomapp;
 
 import com.kma.lamphoun.roomapp.di.NetworkModule;
+import com.kma.lamphoun.roomapp.ui.admin.AdminViewModel_HiltModules;
 import com.kma.lamphoun.roomapp.ui.auth.AuthViewModel_HiltModules;
+import com.kma.lamphoun.roomapp.ui.common.NotificationBadgeViewModel_HiltModules;
+import com.kma.lamphoun.roomapp.ui.common.ProfileViewModel_HiltModules;
 import com.kma.lamphoun.roomapp.ui.landlord.ContractViewModel_HiltModules;
 import com.kma.lamphoun.roomapp.ui.landlord.DashboardViewModel_HiltModules;
+import com.kma.lamphoun.roomapp.ui.landlord.InvoiceFormViewModel_HiltModules;
 import com.kma.lamphoun.roomapp.ui.landlord.InvoiceViewModel_HiltModules;
 import com.kma.lamphoun.roomapp.ui.landlord.MeterReadingViewModel_HiltModules;
 import com.kma.lamphoun.roomapp.ui.landlord.PaymentViewModel_HiltModules;
 import com.kma.lamphoun.roomapp.ui.landlord.ReportViewModel_HiltModules;
 import com.kma.lamphoun.roomapp.ui.landlord.RoomViewModel_HiltModules;
 import com.kma.lamphoun.roomapp.ui.shared.NotificationViewModel_HiltModules;
-import com.kma.lamphoun.roomapp.ui.shared.ProfileViewModel_HiltModules;
 import com.kma.lamphoun.roomapp.ui.tenant.TenantViewModel_HiltModules;
 import dagger.Binds;
 import dagger.Component;
@@ -163,16 +166,20 @@ public final class RoomApp_HiltComponents {
 
   @Subcomponent(
       modules = {
+          AdminViewModel_HiltModules.KeyModule.class,
           AuthViewModel_HiltModules.KeyModule.class,
           ContractViewModel_HiltModules.KeyModule.class,
           DashboardViewModel_HiltModules.KeyModule.class,
           HiltWrapper_ActivityRetainedComponentManager_LifecycleModule.class,
           HiltWrapper_SavedStateHandleModule.class,
+          InvoiceFormViewModel_HiltModules.KeyModule.class,
           InvoiceViewModel_HiltModules.KeyModule.class,
           MeterReadingViewModel_HiltModules.KeyModule.class,
+          NotificationBadgeViewModel_HiltModules.KeyModule.class,
           NotificationViewModel_HiltModules.KeyModule.class,
           PaymentViewModel_HiltModules.KeyModule.class,
           ProfileViewModel_HiltModules.KeyModule.class,
+          com.kma.lamphoun.roomapp.ui.shared.ProfileViewModel_HiltModules.KeyModule.class,
           ReportViewModel_HiltModules.KeyModule.class,
           ActivityCBuilderModule.class,
           ViewModelCBuilderModule.class,
@@ -213,15 +220,19 @@ public final class RoomApp_HiltComponents {
 
   @Subcomponent(
       modules = {
+          AdminViewModel_HiltModules.BindsModule.class,
           AuthViewModel_HiltModules.BindsModule.class,
           ContractViewModel_HiltModules.BindsModule.class,
           DashboardViewModel_HiltModules.BindsModule.class,
           HiltWrapper_HiltViewModelFactory_ViewModelModule.class,
+          InvoiceFormViewModel_HiltModules.BindsModule.class,
           InvoiceViewModel_HiltModules.BindsModule.class,
           MeterReadingViewModel_HiltModules.BindsModule.class,
+          NotificationBadgeViewModel_HiltModules.BindsModule.class,
           NotificationViewModel_HiltModules.BindsModule.class,
           PaymentViewModel_HiltModules.BindsModule.class,
           ProfileViewModel_HiltModules.BindsModule.class,
+          com.kma.lamphoun.roomapp.ui.shared.ProfileViewModel_HiltModules.BindsModule.class,
           ReportViewModel_HiltModules.BindsModule.class,
           RoomViewModel_HiltModules.BindsModule.class,
           TenantViewModel_HiltModules.BindsModule.class

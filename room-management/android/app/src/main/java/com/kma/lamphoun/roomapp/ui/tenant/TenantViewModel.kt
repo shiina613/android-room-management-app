@@ -38,6 +38,9 @@ class TenantViewModel @Inject constructor(
     private val _unreadCount = MutableStateFlow(0)
     val unreadCount: StateFlow<Int> = _unreadCount
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing
+
     var fullName: String = ""
         private set
 
@@ -45,6 +48,14 @@ class TenantViewModel @Inject constructor(
         viewModelScope.launch {
             fullName = tokenDataStore.fullName.firstOrNull() ?: ""
             loadAll()
+        }
+    }
+
+    fun refresh() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            loadInvoices()
+            _isRefreshing.value = false
         }
     }
 

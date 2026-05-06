@@ -89,6 +89,7 @@ public class ContractServiceImpl implements ContractService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<ContractResponse> search(ContractStatus status, Long landlordId,
                                          Long tenantId, Long roomId, Pageable pageable) {
         return contractRepository.search(status, landlordId, tenantId, roomId, pageable)
@@ -96,6 +97,7 @@ public class ContractServiceImpl implements ContractService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ContractResponse getById(Long id) {
         return contractMapper.toResponse(findContract(id));
     }
@@ -178,7 +180,7 @@ public class ContractServiceImpl implements ContractService {
     // --- helpers ---
 
     private Contract findContract(Long id) {
-        return contractRepository.findById(id)
+        return contractRepository.findByIdWithAssociations(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Contract not found with id: " + id));
     }
 
@@ -198,6 +200,7 @@ public class ContractServiceImpl implements ContractService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<ContractResponse> getByTenantUsername(String tenantUsername, ContractStatus status, Pageable pageable) {
         User tenant = findUserByUsername(tenantUsername);
         if (status != null) {

@@ -5,6 +5,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -16,6 +18,7 @@ import com.kma.lamphoun.roomapp.ui.landlord.InvoiceCard
 import com.kma.lamphoun.roomapp.ui.common.*
 import com.kma.lamphoun.roomapp.ui.theme.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TenantInvoiceListScreen(
     onNavigateBack: () -> Unit,
@@ -24,6 +27,8 @@ fun TenantInvoiceListScreen(
 ) {
     val invoices by viewModel.invoices.collectAsState()
     val isLoading by viewModel.isLoadingInvoices.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
+    val pullRefreshState = rememberPullToRefreshState()
     var selectedFilter by remember { mutableStateOf("Tất cả") }
     val filters = listOf("Tất cả", "Chưa TT", "Đã TT")
 
@@ -41,8 +46,14 @@ fun TenantInvoiceListScreen(
         containerColor = SurfaceContainerLow,
         topBar = { AppTopBar(title = "Hóa đơn của tôi", onBack = onNavigateBack) }
     ) { padding ->
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = { viewModel.refresh() },
+            state = pullRefreshState,
+            modifier = Modifier.padding(padding)
+        ) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -86,6 +97,7 @@ fun TenantInvoiceListScreen(
                 }
             }
             item { Spacer(Modifier.height(16.dp)) }
+        }
         }
     }
 }

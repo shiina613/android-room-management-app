@@ -53,12 +53,14 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<RoomResponse> search(RoomStatus status, RoomCategory category, String keyword, Pageable pageable) {
         return roomRepository.search(status, category, keyword, pageable)
                 .map(roomMapper::toResponse);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public RoomResponse getById(Long id) {
         return roomMapper.toResponse(findRoom(id));
     }
